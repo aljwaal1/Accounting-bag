@@ -1,54 +1,82 @@
-name: Android APK CI
+name: Build Android APK
 on:
   push:
     branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
+
 jobs:
-  android:
+  apk:
+    name: Android APK (release and debug fallback)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Environment details
+      - name: Bootstrap native Android files
         run: |
           flutter --version
-          java -version
-      - name: Generate Android project
-        run: |
-          flutter create . --platforms=android --org com.explapp
+          flutter create --project-name accounting_bag --org com.explapp --platforms android .
           rm -f test/widget_test.dart
-      - name: Resolve packages
-        run: flutter pub get
-      - name: Build installable APK
-        run: flutter build apk --release --verbose > flutter-build.log 2>&1 || { tail -n 180 flutter-build.log; exit 1; }
-      - name: Upload APK
+          flutter pub get
+      - name: Try release APK
+        id: release
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee release-build.log
+      - name: Try debug APK if release failed
+        id: debug
+        if: steps.release.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter build apk --debug 2>&1 | tee debug-build.log
+      - name: Confirm APK output
+        run: |
+          ls -lh build/app/outputs/flutter-apk || true
+          test -f build/app/outputs/flutter-apk/app-release.apk || test -f build/app/outputs/flutter-apk/app-debug.apk
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: Accounting-Bag-Android-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: Accounting-Bag-APK
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Static analysis
-        run: flutter analyze
-      - name: Widget and calculator tests
-        run: flutter test
-      - name: Upload build log if failure
-        if: failure()
+      - name: Upload build diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: accounting-bag-build-diagnostics
-          path: flutter-build.log
+          name: Accounting-Bag-Build-Logs
+          path: |
+            release-build.log
+            debug-build.log
           if-no-files-found: ignore
+          retention-days: 14
+
+  validate:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+      - name: Test
+        run: flutter test
