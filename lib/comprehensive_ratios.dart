@@ -8,9 +8,11 @@ class ComprehensiveRatiosScreen extends StatefulWidget {
 }
 class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
   final fields=List.generate(13,(_)=>TextEditingController());
+  final previousFields=List.generate(13,(_)=>TextEditingController());
+  bool compare=false;
   bool calculated=false;
   String t(String ar,String en)=>widget.en?en:ar;
-  @override void dispose(){for(final f in fields){f.dispose();}super.dispose();}
+  @override void dispose(){for(final f in [...fields,...previousFields]){f.dispose();}super.dispose();}
   @override Widget build(BuildContext context){
     final labels=[
       t('الأصول المتداولة','Current assets'),t('المخزون','Inventory'),
@@ -21,20 +23,20 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
       t('الأصول بداية الفترة','Beginning total assets'),t('حقوق الملكية بداية الفترة','Beginning equity'),
       t('المخزون بداية الفترة','Beginning inventory')
     ];
-    double? v(int i){
-      final s=fields[i].text.trim().replaceAll(',','');
+    double? v(int i,{bool previous=false}){
+      final s=(previous?previousFields:fields)[i].text.trim().replaceAll(',','');
       final x=double.tryParse(s);
       return x!=null && x.isFinite?x:null;
     }
-    double? ratio(List<int> indices,double? Function(List<double>) calc){
+    double? ratio(List<int> indices,double? Function(List<double>) calc,{bool previous=false}){
       final vals=<double>[];
-      for(final i in indices){final n=v(i);if(n==null)return null;vals.add(n);}
+      for(final i in indices){final n=v(i,previous:previous);if(n==null)return null;vals.add(n);}
       final n=calc(vals);
       return n!=null && n.isFinite?n:null;
     }
-    final results=<({String group,String name,double? value,bool percent})>[];
+    final results=<({String group,String name,double? value,double? previous,bool percent})>[];
     void add(String group,String ar,String en,List<int> ids,double? Function(List<double>) fn,{bool percent=false}){
-      results.add((group:group,name:t(ar,en),value:ratio(ids,fn),percent:percent));
+      results.add((group:group,name:t(ar,en),value:ratio(ids,fn),previous:compare?ratio(ids,fn,previous:true):null,percent:percent));
     }
     final liquidity=t('السيولة','Liquidity'), leverage=t('المديونية','Leverage'),profit=t('الربحية','Profitability'),eff=t('الكفاءة','Efficiency');
     add(liquidity,'نسبة التداول','Current ratio',[0,3],(a)=>a[1]>0?AccountingMetrics.currentRatio(a[0],a[1]):null);
@@ -52,18 +54,27 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
       Text(t('التحليل المالي الشامل','Comprehensive financial analysis'),style:Theme.of(context).textTheme.titleLarge),
       const SizedBox(height:8),
       Text(t('أدخل البيانات المتوفرة مرة واحدة. اترك الحقول غير المتوفرة فارغة، وستظهر النسب التي لا يمكن حسابها بوضوح.','Enter available data once. Leave unavailable fields blank; ratios missing data will be identified.')),
+      SwitchListTile(title:Text(t('مقارنة مع فترة سابقة','Compare with previous period')),value:compare,onChanged:(v)=>setState((){compare=v;calculated=false;})),
+      Text(t('بيانات الفترة الحالية','Current period inputs'),style:Theme.of(context).textTheme.titleMedium),
       const SizedBox(height:12),
       for(var i=0;i<labels.length;i++)Padding(padding:const EdgeInsets.only(bottom:8),child:TextField(
         controller:fields[i],keyboardType:const TextInputType.numberWithOptions(decimal:true,signed:true),
         onChanged:(_)=>setState(()=>calculated=false),
         decoration:InputDecoration(labelText:labels[i],border:const OutlineInputBorder()))),
+      if(compare)...[
+        Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(t('بيانات الفترة السابقة','Previous period inputs'),style:Theme.of(context).textTheme.titleMedium)),
+        for(var i=0;i<labels.length;i++)Padding(padding:const EdgeInsets.only(bottom:8),child:TextField(
+          controller:previousFields[i],keyboardType:const TextInputType.numberWithOptions(decimal:true,signed:true),
+          onChanged:(_)=>setState(()=>calculated=false),
+          decoration:InputDecoration(labelText:labels[i],border:const OutlineInputBorder()))),
+      ],
       FilledButton(onPressed:()=>setState(()=>calculated=true),child:Text(t('احسب جميع النسب','Calculate all ratios'))),
       if(calculated)...[
         const SizedBox(height:12),
         for(final group in [liquidity,leverage,profit,eff])...[
           Padding(padding:const EdgeInsets.symmetric(vertical:10),child:Text(group,style:Theme.of(context).textTheme.titleMedium)),
           for(final r in results.where((r)=>r.group==group))
-            Card(child:ListTile(title:Text(r.name),subtitle:Text(r.value==null?t('بيانات غير كافية أو مقام غير صالح','Missing data or invalid denominator'):'${r.value!.toStringAsFixed(2)}${r.percent?'%':''}'))),
+            Card(child:ListTile(title:Text(r.name),subtitle:Text(r.value==null?t('بيانات غير كافية أو مقام غير صالح','Missing data or invalid denominator'):'${r.value!.toStringAsFixed(2)}${r.percent?'%':''}' + (compare?'\n${t('الفترة السابقة','Previous')}: ${r.previous==null?t('غير متاح','N/A'):'${r.previous!.toStringAsFixed(2)}${r.percent?'%':''}'}':'') + (compare && r.value!=null && r.previous!=null?'\n${t('التغير','Change')}: ${(r.value!-r.previous!).toStringAsFixed(2)}${r.percent?t(' نقطة مئوية',' percentage points'):''}':'') + '\n' + (r.value==null?t('أكمل البيانات المطلوبة للحساب','Complete required inputs'):t('تُفسر النسبة بمقارنتها بالفترات السابقة ومعايير القطاع؛ ارتفاعها ليس دائمًا أفضل.','Interpret against historical and industry benchmarks; higher is not always better.'))))),
         ]
       ]
     ]);
