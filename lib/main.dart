@@ -1,3 +1,4 @@
+import 'accounting_metrics.dart';
 import 'finance_tools.dart';
 import 'package:flutter/material.dart';
 void main() => runApp(const AccountingBag());
@@ -10,8 +11,8 @@ class _AppState extends State<AccountingBag> {
   int tab = 0;
   String tr(String ar, String eng) => en ? eng : ar;
   @override Widget build(BuildContext context) {
-    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
-    final icons = [Icons.calculate,Icons.account_balance,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
+    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
+    final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff087e87)),useMaterial3: true),
@@ -33,6 +34,8 @@ class _AppState extends State<AccountingBag> {
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
               FinanceToolsScreen(key: ValueKey('finance'+en.toString()),en: en),
+              AccountingMetricsScreen(key: ValueKey('depreciation'+en.toString()),en: en,depreciation: true),
+              AccountingMetricsScreen(key: ValueKey('ratios'+en.toString()),en: en,depreciation: false),
               QuizScreen(key: ValueKey('quiz'+en.toString()),en: en),
               NotesScreen(en: en,entries: false),
               NotesScreen(en: en,entries: true),
