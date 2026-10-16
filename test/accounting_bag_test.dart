@@ -22,7 +22,10 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), '10000');
     await tester.enterText(find.byType(TextField).at(1), '1000');
     await tester.enterText(find.byType(TextField).at(2), '3');
+    await tester.ensureVisible(find.text('احسب'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('احسب'));
+
     await tester.pump();
     expect(find.textContaining('3,000.00'), findsOneWidget);
   });
