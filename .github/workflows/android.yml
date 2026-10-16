@@ -6,28 +6,49 @@ on:
 permissions:
   contents: read
 jobs:
-  build:
+  android:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Generate Android scaffold
+          cache: true
+      - name: Environment details
+        run: |
+          flutter --version
+          java -version
+      - name: Generate Android project
         run: |
           flutter create . --platforms=android --org com.explapp
           rm -f test/widget_test.dart
-      - name: Install dependencies
+      - name: Resolve packages
         run: flutter pub get
-      - name: Analyze source
-        run: flutter analyze
-      - name: Run tests
-        run: flutter test
-      - name: Build release APK
-        run: flutter build apk --release
-      - name: Upload APK artifact
+      - name: Build installable APK
+        run: flutter build apk --release --verbose > flutter-build.log 2>&1 || { tail -n 180 flutter-build.log; exit 1; }
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Accounting-Bag-release-apk
+          name: Accounting-Bag-Android-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          retention-days: 30
+      - name: Static analysis
+        run: flutter analyze
+      - name: Widget and calculator tests
+        run: flutter test
+      - name: Upload build log if failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accounting-bag-build-diagnostics
+          path: flutter-build.log
+          if-no-files-found: ignore
