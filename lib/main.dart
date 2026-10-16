@@ -28,7 +28,7 @@ class _AppState extends State<AccountingBag> {
               Padding(padding: const EdgeInsets.all(4),child: InkWell(onTap: () => setState(() => tab=i),
                 child: Container(width: 102,padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: tab==i ? const Color(0xffc6e9ea) : const Color(0xffedf3f4),borderRadius: BorderRadius.circular(12)),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i]),const SizedBox(height: 5),Text(names[i],textAlign: TextAlign.center)]))))),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i]),const SizedBox(height: 5),Text(names[i],textAlign: TextAlign.center)])))))),
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
               QuizScreen(key: ValueKey('quiz'+en.toString()),en: en),
