@@ -1,3 +1,4 @@
+import 'comprehensive_ratios.dart';
 import 'accounting_metrics.dart';
 import 'finance_tools.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,7 @@ class _AppState extends State<AccountingBag> {
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
               FinanceToolsScreen(key: ValueKey('finance'+en.toString()),en: en),
               AccountingMetricsScreen(key: ValueKey('depreciation'+en.toString()),en: en,depreciation: true),
-              AccountingMetricsScreen(key: ValueKey('ratios'+en.toString()),en: en,depreciation: false),
+              FinancialRatioModes(en: en),
               QuizScreen(key: ValueKey('quiz'+en.toString()),en: en),
               NotesScreen(en: en,entries: false),
               NotesScreen(en: en,entries: true),
@@ -171,4 +172,22 @@ class TemplatesScreen extends StatelessWidget{
  card(en?'Income statement':'قائمة الدخل',Text(en?'Net sales − Cost of sales = Gross profit':'صافي المبيعات − تكلفة المبيعات = مجمل الربح')),
  Padding(padding:const EdgeInsets.all(16),child:Text(en?'Preview templates only. Excel/PDF export is planned but not yet implemented.':'النماذج الحالية للعرض فقط؛ التصدير إلى Excel وPDF لم ينفذ بعد.'))
  ]);
+}
+
+class FinancialRatioModes extends StatefulWidget {
+  final bool en;
+  const FinancialRatioModes({super.key,required this.en});
+  @override State<FinancialRatioModes> createState()=>_FinancialRatioModesState();
+}
+class _FinancialRatioModesState extends State<FinancialRatioModes>{
+  bool comprehensive=false;
+  @override Widget build(BuildContext context)=>Column(children:[
+    Padding(padding:const EdgeInsets.all(8),child:SegmentedButton<bool>(
+      segments:[
+        ButtonSegment(value:false,label:Text(widget.en?'Single ratio':'نسبة منفردة')),
+        ButtonSegment(value:true,label:Text(widget.en?'Full analysis':'تحليل شامل'))
+      ],
+      selected:{comprehensive},onSelectionChanged:(s)=>setState(()=>comprehensive=s.first))),
+    Expanded(child:comprehensive?ComprehensiveRatiosScreen(en:widget.en):AccountingMetricsScreen(en:widget.en,depreciation:false))
+  ]);
 }
