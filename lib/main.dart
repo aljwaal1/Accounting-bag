@@ -68,10 +68,10 @@ class _CalculatorState extends State<CalculatorScreen> {
   setState(()=>output=tr('أدخل قيمًا رقمية صحيحة','Enter valid numeric values'));return;
  }
  double? result;
- if(mode==0 && z!>0 && x>=y && y>=0) result=(x-y)/z;
- if(mode==1 && y>0) result=(x-y)/y*100;
- if(mode==2 && y>z! && x>=0 && z>=0) result=x/(y-z);
- if(mode==3 && z!>0 && x>=y && y>=0) result=(x-y)/z;
+ if(mode==0 && z!>0 && x>=y && y>=0 && x.isFinite && y.isFinite && z.isFinite) result=(x-y)/z;
+ if(mode==1 && y>0 && x>=0 && x.isFinite && y.isFinite) result=(x-y)/y*100;
+ if(mode==2 && y>z! && x>=0 && z>=0 && x.isFinite && y.isFinite && z.isFinite) result=x/(y-z);
+ if(mode==3 && z!>0 && x>=y && y>=0 && x.isFinite && y.isFinite && z.isFinite) result=(x-y)/z;
  setState(()=>output=result==null || !result.isFinite
   ? tr('تحقق من المدخلات والمقام','Check inputs and denominators')
   : tr('النتيجة: ','Result: ')+fmt(result)+(mode==1?'%':''));
