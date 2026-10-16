@@ -1,3 +1,4 @@
+import 'finance_tools.dart';
 import 'package:flutter/material.dart';
 void main() => runApp(const AccountingBag());
 class AccountingBag extends StatefulWidget {
@@ -9,8 +10,8 @@ class _AppState extends State<AccountingBag> {
   int tab = 0;
   String tr(String ar, String eng) => en ? eng : ar;
   @override Widget build(BuildContext context) {
-    final names = [tr('الحاسبات','Calculators'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
-    final icons = [Icons.calculate,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
+    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
+    final icons = [Icons.calculate,Icons.account_balance,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff087e87)),useMaterial3: true),
@@ -24,13 +25,14 @@ class _AppState extends State<AccountingBag> {
               decoration: BoxDecoration(color: const Color(0xff087e87),borderRadius: BorderRadius.circular(16)),
               child: Text(tr('تعلم واحسب وراجع حساباتك — دون إنترنت','Learn, calculate and review — offline'),
                 style: const TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.bold))),
-            SizedBox(height: 90,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: names.length,itemBuilder: (context,i) =>
+            SizedBox(height: 98,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: names.length,itemBuilder: (context,i) =>
               Padding(padding: const EdgeInsets.all(4),child: InkWell(onTap: () => setState(() => tab=i),
                 child: Container(width: 102,padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: tab==i ? const Color(0xffc6e9ea) : const Color(0xffedf3f4),borderRadius: BorderRadius.circular(12)),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i]),const SizedBox(height: 5),Text(names[i],textAlign: TextAlign.center)])))))),
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
+              FinanceToolsScreen(key: ValueKey('finance'+en.toString()),en: en),
               QuizScreen(key: ValueKey('quiz'+en.toString()),en: en),
               NotesScreen(en: en,entries: false),
               NotesScreen(en: en,entries: true),
