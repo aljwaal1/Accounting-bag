@@ -1,3 +1,4 @@
+import 'feasibility_analysis.dart';
 import 'package:flutter/material.dart';
 
 enum FeasibilityKind { revenue, operatingFixed, operatingVariable, startup, investment }
@@ -37,6 +38,12 @@ class _FeasibilityState extends State<FeasibilityScreen>{
   FeasibilityKind kind=FeasibilityKind.operatingFixed;
   FeasibilityFrequency frequency=FeasibilityFrequency.monthly;
   int? editing;
+  final discountRate=TextEditingController(text:'10');
+  final growthRate=TextEditingController(text:'0');
+  final costGrowthRate=TextEditingController(text:'0');
+  final years=TextEditingController(text:'5');
+  final recovery=TextEditingController(text:'0');
+  bool showProjection=false;
   String? error;
   String t(String ar,String en)=>widget.en?en:ar;
   String kindName(FeasibilityKind k)=>switch(k){
@@ -51,7 +58,7 @@ class _FeasibilityState extends State<FeasibilityScreen>{
     FeasibilityFrequency.monthly=>t('شهري','Monthly'),
     FeasibilityFrequency.yearly=>t('سنوي','Yearly')
   };
-  @override void dispose(){category.dispose();description.dispose();quantity.dispose();price.dispose();super.dispose();}
+  @override void dispose(){category.dispose();description.dispose();quantity.dispose();price.dispose();discountRate.dispose();growthRate.dispose();costGrowthRate.dispose();years.dispose();recovery.dispose();super.dispose();}
   void reset(){
     category.clear();description.clear();quantity.text='1';price.clear();kind=FeasibilityKind.operatingFixed;frequency=FeasibilityFrequency.monthly;editing=null;error=null;
   }
@@ -115,6 +122,46 @@ class _FeasibilityState extends State<FeasibilityScreen>{
         (t('الفائض التشغيلي قبل الإهلاك والتمويل والضرائب','Operating surplus before depreciation, finance and tax'),surplus)
       ])ListTile(title:Text(entry.$1),trailing:Text(entry.$2.toStringAsFixed(2))),
       ListTile(title:Text(t('الاسترداد البسيط التقريبي','Approximate simple payback')),subtitle:Text(payback==null?t('غير متاح دون فائض تشغيلي موجب','Unavailable without positive operating surplus'):'${payback.toStringAsFixed(2)} ${t('سنة','years')}')),
+      const Divider(),
+      Text(t('التوقعات المالية متعددة السنوات','Multi-year financial forecast'),style:Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height:8),
+      for(final pair in [
+        (years,t('عدد سنوات الدراسة (1–30)','Forecast years (1–30)')),
+        (discountRate,t('معدل الخصم السنوي %','Annual discount rate %')),
+        (growthRate,t('نمو الإيرادات السنوي %','Annual revenue growth %')),
+        (costGrowthRate,t('نمو التكاليف السنوي %','Annual cost growth %')),
+        (recovery,t('القيمة المستردة في نهاية المشروع','Terminal recovery value'))
+      ])Padding(padding:const EdgeInsets.only(bottom:8),child:TextField(
+        controller:pair.$1,keyboardType:const TextInputType.numberWithOptions(decimal:true,signed:true),
+        onChanged:(_)=>setState(()=>showProjection=false),
+        decoration:InputDecoration(labelText:pair.$2,border:const OutlineInputBorder()))),
+      FilledButton(onPressed:()=>setState(()=>showProjection=true),child:Text(t('تحليل التدفقات والجدوى','Analyze cash flows and feasibility'))),
+      if(showProjection)Builder(builder:(context){
+        final n=int.tryParse(years.text.trim());
+        final rate=double.tryParse(discountRate.text.trim());
+        final rg=double.tryParse(growthRate.text.trim());
+        final cg=double.tryParse(costGrowthRate.text.trim());
+        final terminal=double.tryParse(recovery.text.trim());
+        if(n==null || n<1 || n>30 || rate==null || rg==null || cg==null || terminal==null ||
+           !rate.isFinite || !rg.isFinite || !cg.isFinite || !terminal.isFinite ||
+           rate<=-100 || rg<=-100 || cg<=-100 || terminal<0){
+          return Padding(padding:const EdgeInsets.all(12),child:Text(t('تحقق من سنوات الدراسة والمعدلات والقيمة المستردة','Check forecast years, rates and terminal value')));
+        }
+        final flows=FeasibilityAnalysis.projection(investment:initial,annualRevenue:revenue,
+          annualOperatingCosts:costs,years:n,revenueGrowth:rg/100,costGrowth:cg/100,terminalRecovery:terminal);
+        final npv=FeasibilityAnalysis.npv(rate/100,flows);
+        final irr=FeasibilityAnalysis.irr(flows);
+        final discounted=FeasibilityAnalysis.discountedPayback(rate/100,flows);
+        return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          ListTile(title:const Text('NPV'),subtitle:Text(npv.toStringAsFixed(2))),
+          ListTile(title:const Text('IRR'),subtitle:Text(irr==null?t('غير متاح','Unavailable'):'${(irr*100).toStringAsFixed(2)}%')),
+          ListTile(title:Text(t('الاسترداد المخصوم','Discounted payback')),
+            subtitle:Text(discounted==null?t('لا يُسترد خلال مدة الدراسة','Not recovered during forecast'):'${discounted.toStringAsFixed(2)} ${t('سنة','years')}')),
+          Text(t('التدفقات النقدية السنوية (السنة صفر = الاستثمار الأولي)','Annual cash flows (year zero = initial outlay)')),
+          for(var i=0;i<flows.length;i++)ListTile(dense:true,title:Text('${t('السنة','Year')} $i'),trailing:Text(flows[i].toStringAsFixed(2))),
+          Text(t('النتائج افتراضية مبسطة قبل التمويل والضرائب ورأس المال العامل؛ لا تصلح وحدها لاتخاذ قرار استثماري.','Simplified unlevered, pre-tax projection excluding working capital; not sufficient alone for an investment decision.'))
+        ]);
+      }),
       Text(t('تنبيه: لا تشمل هذه النسخة الضرائب أو رأس المال العامل أو توقيت التدفقات أو القيمة الزمنية للنقود. البيانات محفوظة في هذه الشاشة فقط حاليًا.','Note: tax, working capital, cash-flow timing and time value of money are not included. Data currently stays in this screen only.'))
     ]);
   }
