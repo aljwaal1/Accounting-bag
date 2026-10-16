@@ -70,7 +70,7 @@ class _CalculatorState extends State<CalculatorScreen> {
  double? result;
  if(mode==0 && z!>0 && x>=y && y>=0) result=(x-y)/z;
  if(mode==1 && y>0) result=(x-y)/y*100;
- if(mode==2 && y>z! && x>=0) result=x/(y-z);
+ if(mode==2 && y>z! && x>=0 && z>=0) result=x/(y-z);
  if(mode==3 && z!>0 && x>=y && y>=0) result=(x-y)/z;
  setState(()=>output=result==null || !result.isFinite
   ? tr('تحقق من المدخلات والمقام','Check inputs and denominators')
@@ -124,7 +124,7 @@ class _QuizState extends State<QuizScreen>{
  return ListView(children:[card(tr('السؤال','Question')+' '+(index+1).toString()+' / '+questions.length.toString(),Column(children:[
  LinearProgressIndicator(value:(index+1)/questions.length),
  const SizedBox(height:16),Text(widget.en?q[1]:q[0],style:const TextStyle(fontSize:18)),
- for(int i=0;i<2;i++) RadioListTile<int>(value:i,groupValue:choice,title:Text(q[widget.en?i+4:i+2]),onChanged:(v)=>setState(()=>choice=v)),
+ for(int i=0;i<2;i++) Padding(padding: const EdgeInsets.symmetric(vertical:4),child: OutlinedButton.icon(onPressed:()=>setState(()=>choice=i),icon:Icon(choice==i?Icons.radio_button_checked:Icons.radio_button_unchecked),label:Align(alignment:AlignmentDirectional.centerStart,child:Text(q[widget.en?i+4:i+2])))),
  FilledButton(onPressed:choice==null?null:()=>setState((){if(choice==correct)score++;index++;choice=null;}),child:Text(tr('التالي','Next')))
  ]))]);
  }
