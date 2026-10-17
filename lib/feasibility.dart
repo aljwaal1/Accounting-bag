@@ -71,10 +71,10 @@ class _FeasibilityState extends State<FeasibilityScreen>{
       setState(()=>error=t('أدخل تصنيفًا ووصفًا وقيمًا صالحة، وتأكد من دورية البند','Enter a category, description, valid amounts and matching frequency'));return;
     }
     final item=FeasibilityItem(category:category.text.trim(),description:description.text.trim(),kind:kind,frequency:frequency,quantity:q,unitPrice:p);
-    setState((){if(editing==null){items.add(item);}else{items[editing!]=item;}reset();});
+    setState((){if(editing==null){items.add(item);}else{items[editing!]=item;}showProjection=false;reset();});
   }
   void edit(int i){final x=items[i];setState((){
-    editing=i;category.text=x.category;description.text=x.description;quantity.text=x.quantity.toString();price.text=x.unitPrice.toString();kind=x.kind;frequency=x.frequency;error=null;
+    editing=i;category.text=x.category;description.text=x.description;quantity.text=x.quantity.toString();price.text=x.unitPrice.toString();kind=x.kind;frequency=x.frequency;showProjection=false;error=null;
   });}
   @override Widget build(BuildContext context){
     final revenue=FeasibilityModel.annualRevenue(items),costs=FeasibilityModel.annualOperatingCosts(items),initial=FeasibilityModel.initialOutlay(items),surplus=FeasibilityModel.operatingSurplus(items);
@@ -88,14 +88,14 @@ class _FeasibilityState extends State<FeasibilityScreen>{
       const SizedBox(height:8),
       TextField(controller:description,decoration:InputDecoration(labelText:t('وصف البند','Line item description'),border:const OutlineInputBorder())),
       const SizedBox(height:8),
-      DropdownButtonFormField<FeasibilityKind>(initialValue:kind,isExpanded:true,decoration:InputDecoration(labelText:t('طبيعة البند','Item type'),border:const OutlineInputBorder()),
+      DropdownButtonFormField<FeasibilityKind>(key:ValueKey('kind-${kind.name}'),initialValue:kind,isExpanded:true,decoration:InputDecoration(labelText:t('طبيعة البند','Item type'),border:const OutlineInputBorder()),
         items:FeasibilityKind.values.map((k)=>DropdownMenuItem(value:k,child:Text(kindName(k)))).toList(),
-        onChanged:(v)=>setState((){kind=v??kind;frequency=(kind==FeasibilityKind.startup || kind==FeasibilityKind.investment)?FeasibilityFrequency.once:FeasibilityFrequency.monthly;})),
+        onChanged:(v)=>setState((){showProjection=false;kind=v??kind;frequency=(kind==FeasibilityKind.startup || kind==FeasibilityKind.investment)?FeasibilityFrequency.once:FeasibilityFrequency.monthly;})),
       const SizedBox(height:8),
       DropdownButtonFormField<FeasibilityFrequency>(key:ValueKey('${kind.name}-${frequency.name}'),initialValue:frequency,isExpanded:true,decoration:InputDecoration(labelText:t('التكرار','Frequency'),border:const OutlineInputBorder()),
         items:(kind==FeasibilityKind.startup || kind==FeasibilityKind.investment?[FeasibilityFrequency.once]:[FeasibilityFrequency.monthly,FeasibilityFrequency.yearly])
           .map((f)=>DropdownMenuItem(value:f,child:Text(frequencyName(f)))).toList(),
-        onChanged:(v)=>setState(()=>frequency=v??frequency)),
+        onChanged:(v)=>setState((){showProjection=false;frequency=v??frequency;})),
       const SizedBox(height:8),
       Row(children:[
         Expanded(child:TextField(controller:quantity,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:t('الكمية','Quantity'),border:const OutlineInputBorder()))),
@@ -112,7 +112,7 @@ class _FeasibilityState extends State<FeasibilityScreen>{
         subtitle:Text('${kindName(items[i].kind)} • ${frequencyName(items[i].frequency)} • ${items[i].total.toStringAsFixed(2)}'),
         trailing:Wrap(spacing:0,children:[
           IconButton(tooltip:t('تعديل','Edit'),onPressed:()=>edit(i),icon:const Icon(Icons.edit_outlined)),
-          IconButton(tooltip:t('حذف','Delete'),onPressed:()=>setState((){items.removeAt(i);reset();}),icon:const Icon(Icons.delete_outline)),
+          IconButton(tooltip:t('حذف','Delete'),onPressed:()=>setState((){items.removeAt(i);showProjection=false;reset();}),icon:const Icon(Icons.delete_outline)),
         ]))),
       const Divider(),
       for(final entry in [
@@ -162,7 +162,7 @@ class _FeasibilityState extends State<FeasibilityScreen>{
           Text(t('النتائج افتراضية مبسطة قبل التمويل والضرائب ورأس المال العامل؛ لا تصلح وحدها لاتخاذ قرار استثماري.','Simplified unlevered, pre-tax projection excluding working capital; not sufficient alone for an investment decision.'))
         ]);
       }),
-      Text(t('تنبيه: لا تشمل هذه النسخة الضرائب أو رأس المال العامل أو توقيت التدفقات أو القيمة الزمنية للنقود. البيانات محفوظة في هذه الشاشة فقط حاليًا.','Note: tax, working capital, cash-flow timing and time value of money are not included. Data currently stays in this screen only.'))
+      Text(t('تنبيه: تتضمن التوقعات خصم التدفقات السنوية، لكنها لا تشمل الضرائب أو رأس المال العامل أو التمويل أو التدفقات داخل السنة. البيانات لا تُحفظ بعد إغلاق الشاشة.','Note: annual flows are discounted, but tax, working capital, financing and intra-year cash timing are excluded. Data is not persisted after leaving the screen.'))
     ]);
   }
 }
