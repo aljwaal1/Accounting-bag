@@ -59,7 +59,7 @@ class _AccountingMetricsState extends State<AccountingMetricsScreen>{
         if(v==null || !v.isFinite){setState(()=>result=t('أدخل أرقامًا صحيحة','Enter valid numbers'));return;}
         values.add(v);
       }
-      final a=values[0],b=values[1],c=values.length>2?values[2]:0,d=values.length>3?values[3]:0;
+      final a=values[0],b=values[1],c=values.length>2?values[2]:0.0,d=values.length>3?values[3]:0.0;
       double? value;
       if(widget.depreciation){
         switch(mode){
