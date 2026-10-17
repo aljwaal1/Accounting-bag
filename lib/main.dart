@@ -28,11 +28,11 @@ class _AppState extends State<AccountingBag> {
               decoration: BoxDecoration(color: const Color(0xff087e87),borderRadius: BorderRadius.circular(16)),
               child: Text(tr('تعلم واحسب وراجع حساباتك — دون إنترنت','Learn, calculate and review — offline'),
                 style: const TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.bold))),
-            SizedBox(height: 98,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: names.length,itemBuilder: (context,i) =>
+            SizedBox(height: 110,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: names.length,itemBuilder: (context,i) =>
               Padding(padding: const EdgeInsets.all(4),child: InkWell(onTap: () => setState(() => tab=i),
                 child: Container(width: 102,padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: tab==i ? const Color(0xffc6e9ea) : const Color(0xffedf3f4),borderRadius: BorderRadius.circular(12)),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i]),const SizedBox(height: 5),Text(names[i],textAlign: TextAlign.center)])))))),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i],size:22),const SizedBox(height: 4),Flexible(child:Text(names[i],textAlign: TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12)))])))))),
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
               FinanceToolsScreen(key: ValueKey('finance'+en.toString()),en: en),
