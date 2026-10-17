@@ -18,6 +18,16 @@ class FeasibilityAnalysis {
   static double? irr(List<double> flows) {
     if(flows.length<2 || flows.any((x)=>!x.isFinite) ||
        !flows.any((x)=>x<0) || !flows.any((x)=>x>0))return null;
+    // Non-conventional cash flows can have multiple IRRs; avoid misleading single-root output.
+    var signChanges=0;
+    var previousSign=0;
+    for(final value in flows){
+      final sign=value>0?1:(value<0?-1:0);
+      if(sign==0)continue;
+      if(previousSign!=0 && previousSign!=sign)signChanges++;
+      previousSign=sign;
+    }
+    if(signChanges!=1)return null;
     var lo=-0.9999;
     var hi=1.0;
     var left=npv(lo,flows);
@@ -37,7 +47,7 @@ class FeasibilityAnalysis {
   }
 
   static double? discountedPayback(double rate,List<double> flows){
-    if(rate<=-1 || flows.length<2 || flows.first>=0)return null;
+    if(!rate.isFinite || rate<=-1 || flows.length<2 || flows.any((x)=>!x.isFinite) || flows.first>=0)return null;
     var cumulative=flows.first;
     for(var i=1;i<flows.length;i++){
       final discounted=flows[i]/math.pow(1+rate,i);
@@ -60,7 +70,9 @@ class FeasibilityAnalysis {
   }){
     if(years<1 || years>30 || investment<0 || annualRevenue<0 ||
       annualOperatingCosts<0 || terminalRecovery<0 || revenueGrowth<=-1 ||
-      costGrowth<=-1)throw ArgumentError('Invalid forecast inputs');
+      costGrowth<=-1 || !investment.isFinite || !annualRevenue.isFinite ||
+      !annualOperatingCosts.isFinite || !terminalRecovery.isFinite ||
+      !revenueGrowth.isFinite || !costGrowth.isFinite)throw ArgumentError('Invalid forecast inputs');
     final flows=<double>[-investment];
     for(var year=1;year<=years;year++){
       final income=annualRevenue*math.pow(1+revenueGrowth,year-1);
