@@ -60,7 +60,7 @@ class _FinanceToolsState extends State<FinanceToolsScreen> {
         }
         values.add(value);
       }
-      final a=values[0],b=values[1],c=values.length>2?values[2]:0;
+      final a=values[0],b=values[1],c=values.length>2?values[2]:0.0;
       double? result;
       final count=values.length>3?values[3]:b;
       final validCount=count>0 && count==count.roundToDouble() && count<=365;
