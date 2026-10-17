@@ -23,11 +23,57 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
       t('الأصول بداية الفترة','Beginning total assets'),t('حقوق الملكية بداية الفترة','Beginning equity'),
       t('المخزون بداية الفترة','Beginning inventory')
     ];
-    double? v(int i,{bool previous=false}){
-      final s=(previous?previousFields:fields)[i].text.trim().replaceAll(',','');
-      final x=double.tryParse(s);
-      return x!=null && x.isFinite?x:null;
+    Map<int,double> resolved({bool previous=false}) {
+      final source=previous?previousFields:fields;
+      final values=<int,double>{};
+      for(var i=0;i<source.length;i++){
+        final raw=source[i].text.trim().replaceAll(',','');
+        final number=double.tryParse(raw);
+        if(raw.isNotEmpty && number!=null && number.isFinite)values[i]=number;
+      }
+      // Accounting equation: assets = liabilities + equity.
+      if(!values.containsKey(5) && values.containsKey(4) && values.containsKey(6)){
+        values[5]=values[4]!+values[6]!;
+      }else if(!values.containsKey(4) && values.containsKey(5) && values.containsKey(6)){
+        values[4]=values[5]!-values[6]!;
+      }else if(!values.containsKey(6) && values.containsKey(5) && values.containsKey(4)){
+        values[6]=values[5]!-values[4]!;
+      }
+      return values;
     }
+    final current=resolved();
+    final prior=compare?resolved(previous:true):<int,double>{};
+    double? v(int i,{bool previous=false})=>(previous?prior:current)[i];
+    List<String> validate(Map<int,double> data,List<TextEditingController> source){
+      final problems=<String>[];
+      for(var i=0;i<source.length;i++){
+        final raw=source[i].text.trim().replaceAll(',','');
+        if(raw.isNotEmpty && (!data.containsKey(i) || !data[i]!.isFinite)){
+          problems.add(t('القيمة المدخلة غير صالحة في: ','Invalid value for: ')+labels[i]);
+        }
+      }
+      final a=data[5],l=data[4],e=data[6];
+      bool differs(double x,double y)=> (x-y).abs()>0.01+0.000001*[x.abs(),y.abs()].reduce((a,b)=>a>b?a:b);
+      if(a!=null && l!=null && e!=null && differs(a,l+e)){
+        problems.add(t('الميزانية غير متوازنة: الفرق = ','Balance sheet does not balance: difference = ')+(a-l-e).toStringAsFixed(2));
+      }
+      for(final pair in <(int,int)>[(1,0),(2,0),(3,4),(0,5)]){
+        final part=data[pair.$1],whole=data[pair.$2];
+        if(part!=null && whole!=null && part>whole+0.01){
+          problems.add(labels[pair.$1]+t(' لا يمكن أن يتجاوز ',' cannot exceed ')+labels[pair.$2]);
+        }
+      }
+      if(data[7]!=null && data[8]!=null && data[8]!>data[7]!){
+        // A gross loss is possible; do not reject it.
+      }
+      for(final i in <int>[0,1,2,3,4,5,7,8,10,12]){
+        if(data[i]!=null && data[i]!<0){
+          problems.add(labels[i]+t(' لا يمكن أن يكون سالبًا',' cannot be negative'));
+        }
+      }
+      return problems;
+    }
+    final errors=[...validate(current,fields),if(compare)...validate(prior,previousFields)];
     double? ratio(List<int> indices,double? Function(List<double>) calc,{bool previous=false}){
       final vals=<double>[];
       for(final i in indices){final n=v(i,previous:previous);if(n==null)return null;vals.add(n);}
@@ -50,10 +96,10 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
     add(profit,'العائد على متوسط حقوق الملكية','Return on average equity',[9,11,6],(a)=>(a[1]+a[2])>0?AccountingMetrics.roe(a[0],(a[1]+a[2])/2):null,percent:true);
     add(eff,'دوران متوسط الأصول','Average asset turnover',[7,10,5],(a)=>(a[1]+a[2])>0?AccountingMetrics.assetTurnover(a[0],(a[1]+a[2])/2):null);
     add(eff,'دوران متوسط المخزون','Average inventory turnover',[8,12,1],(a)=>(a[1]+a[2])>0?AccountingMetrics.inventoryTurnover(a[0],(a[1]+a[2])/2):null);
-    return ListView(padding:const EdgeInsets.all(12),children:[
+    return Column(children:[Expanded(child:ListView(padding:const EdgeInsets.all(12),children:[
       Text(t('التحليل المالي الشامل','Comprehensive financial analysis'),style:Theme.of(context).textTheme.titleLarge),
       const SizedBox(height:8),
-      Text(t('أدخل البيانات المتوفرة مرة واحدة. اترك الحقول غير المتوفرة فارغة، وستظهر النسب التي لا يمكن حسابها بوضوح.','Enter available data once. Leave unavailable fields blank; ratios missing data will be identified.')),
+      Text(t('أدخل البيانات المتوفرة. يستنتج التطبيق إجمالي الأصول أو الالتزامات أو حقوق الملكية إذا توفرت القيمتان الأخريان، ويمنع التحليل عند وجود عدم توازن.','Enter available data. Assets, liabilities or equity are derived when the other two are provided. Unbalanced inputs block analysis.')),
       SwitchListTile(title:Text(t('مقارنة مع فترة سابقة','Compare with previous period')),value:compare,onChanged:(v)=>setState((){compare=v;calculated=false;})),
       Text(t('بيانات الفترة الحالية','Current period inputs'),style:Theme.of(context).textTheme.titleMedium),
       const SizedBox(height:12),
@@ -68,8 +114,9 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
           onChanged:(_)=>setState(()=>calculated=false),
           decoration:InputDecoration(labelText:labels[i],border:const OutlineInputBorder()))),
       ],
-      FilledButton(onPressed:()=>setState(()=>calculated=true),child:Text(t('احسب جميع النسب','Calculate all ratios'))),
-      if(calculated)...[
+      if(errors.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t('أخطاء يجب تصحيحها قبل التحليل','Correct these errors before analysis'),style:TextStyle(color:Theme.of(context).colorScheme.error,fontWeight:FontWeight.bold)),for(final message in errors)Text('• $message')]))),
+      if(current.containsKey(5) || current.containsKey(4) || current.containsKey(6))Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t('الميزانية بعد الاشتقاق الآلي','Balance sheet after automatic derivation')),for(final i in [5,4,6])Text('${labels[i]}: ${current[i]?.toStringAsFixed(2)??t('غير متاح','N/A')}${fields[i].text.trim().isEmpty && current.containsKey(i)?t(' (محسوب تلقائيًا)',' (auto-calculated)'):''}')]))),
+      if(calculated && errors.isEmpty)...[
         const SizedBox(height:12),
         for(final group in [liquidity,leverage,profit,eff])...[
           Padding(padding:const EdgeInsets.symmetric(vertical:10),child:Text(group,style:Theme.of(context).textTheme.titleMedium)),
@@ -77,6 +124,6 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
             Card(child:ListTile(title:Text(r.name),subtitle:Text(r.value==null?t('بيانات غير كافية أو مقام غير صالح','Missing data or invalid denominator'):'${r.value!.toStringAsFixed(2)}${r.percent?'%':''}' + (compare?'\n${t('الفترة السابقة','Previous')}: ${r.previous==null?t('غير متاح','N/A'):'${r.previous!.toStringAsFixed(2)}${r.percent?'%':''}'}':'') + (compare && r.value!=null && r.previous!=null?'\n${t('التغير','Change')}: ${(r.value!-r.previous!).toStringAsFixed(2)}${r.percent?t(' نقطة مئوية',' percentage points'):''}':'') + '\n' + (r.value==null?t('أكمل البيانات المطلوبة للحساب','Complete required inputs'):t('تُفسر النسبة بمقارنتها بالفترات السابقة ومعايير القطاع؛ ارتفاعها ليس دائمًا أفضل.','Interpret against historical and industry benchmarks; higher is not always better.'))))),
         ]
       ]
-    ]);
+    ])),SafeArea(top:false,child:Padding(padding:const EdgeInsets.fromLTRB(12,6,12,8),child:SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:errors.isEmpty?()=>setState(()=>calculated=true):null,icon:const Icon(Icons.calculate),label:Text(t('احسب جميع النسب','Calculate all ratios'))))))]);
   }
 }
