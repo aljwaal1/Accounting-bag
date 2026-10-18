@@ -41,6 +41,22 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
       }
       return values;
     }
+    void autoFill(List<TextEditingController> source){
+      double? read(int i){
+        final x=double.tryParse(source[i].text.trim().replaceAll(',',''));
+        return x!=null && x.isFinite?x:null;
+      }
+      final assets=read(5),liabilities=read(4),equity=read(6);
+      // Never overwrite user-entered values: if all three are present
+      // and inconsistent, there is no evidence identifying the incorrect one.
+      if(assets==null && source[5].text.trim().isEmpty && liabilities!=null && equity!=null){
+        source[5].text=(liabilities+equity).toStringAsFixed(2);
+      }else if(liabilities==null && source[4].text.trim().isEmpty && assets!=null && equity!=null){
+        source[4].text=(assets-equity).toStringAsFixed(2);
+      }else if(equity==null && source[6].text.trim().isEmpty && assets!=null && liabilities!=null){
+        source[6].text=(assets-liabilities).toStringAsFixed(2);
+      }
+    }
     final current=resolved();
     final prior=compare?resolved(previous:true):<int,double>{};
     double? v(int i,{bool previous=false})=>(previous?prior:current)[i];
@@ -115,6 +131,8 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
           decoration:InputDecoration(labelText:labels[i],border:const OutlineInputBorder()))),
       ],
       if(errors.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t('أخطاء يجب تصحيحها قبل التحليل','Correct these errors before analysis'),style:TextStyle(color:Theme.of(context).colorScheme.error,fontWeight:FontWeight.bold)),for(final message in errors)Text('• $message')]))),
+      OutlinedButton.icon(onPressed:()=>setState((){autoFill(fields);if(compare)autoFill(previousFields);calculated=false;}),icon:const Icon(Icons.auto_fix_high),label:Text(t('تعبئة القيم القابلة للاشتقاق تلقائيًا','Auto-fill derivable values'))),
+      Text(t('لا يتم تغيير رقم أدخلته يدويًا. إذا كانت القيم متعارضة، يجب مراجعة مصدر البيانات لتحديد الرقم الصحيح.','Manually entered values are never overwritten. Conflicting figures require source verification.')),
       if(current.containsKey(5) || current.containsKey(4) || current.containsKey(6))Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t('الميزانية بعد الاشتقاق الآلي','Balance sheet after automatic derivation')),for(final i in [5,4,6])Text('${labels[i]}: ${current[i]?.toStringAsFixed(2)??t('غير متاح','N/A')}${fields[i].text.trim().isEmpty && current.containsKey(i)?t(' (محسوب تلقائيًا)',' (auto-calculated)'):''}')]))),
       if(calculated && errors.isEmpty)...[
         const SizedBox(height:12),
