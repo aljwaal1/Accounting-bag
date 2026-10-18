@@ -15,9 +15,28 @@ class _AppState extends State<AccountingBag> {
   @override Widget build(BuildContext context) {
     final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
     final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.assessment,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
+    const palette=<Color>[
+      Color(0xff1479c9),Color(0xff7b55cc),Color(0xffe58a27),
+      Color(0xff159b86),Color(0xffd85a87),Color(0xff6b78d8),
+      Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),
+    ];
+    final scheme=ColorScheme.fromSeed(seedColor:const Color(0xff3568c9),brightness:Brightness.light);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff087e87)),useMaterial3: true),
+      theme: ThemeData(
+        useMaterial3:true,
+        colorScheme:scheme,
+        scaffoldBackgroundColor:const Color(0xfff4f7ff),
+        appBarTheme:const AppBarTheme(backgroundColor:Color(0xffedf2ff),foregroundColor:Color(0xff203660),centerTitle:true,elevation:0),
+        cardTheme:CardThemeData(color:Colors.white,elevation:1,shadowColor:const Color(0x183668aa),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18))),
+        inputDecorationTheme:InputDecorationTheme(
+          filled:true,fillColor:Colors.white,
+          border:OutlineInputBorder(borderRadius:BorderRadius.circular(14)),
+          enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:const BorderSide(color:Color(0xffccd9ed))),
+          focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:const BorderSide(color:Color(0xff3568c9),width:2)),
+        ),
+        filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:const Color(0xff3568c9),foregroundColor:Colors.white,padding:const EdgeInsets.symmetric(vertical:14,horizontal:18))),
+      ),
       home: Directionality(textDirection: en ? TextDirection.ltr : TextDirection.rtl,
         child: Scaffold(
           appBar: AppBar(title: Text(tr('الحقيبة المحاسبية','Accounting Bag')),actions: [
@@ -25,14 +44,14 @@ class _AppState extends State<AccountingBag> {
           ]),
           body: Column(children: [
             Container(width: double.infinity,margin: const EdgeInsets.all(12),padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: const Color(0xff087e87),borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(gradient:const LinearGradient(colors:[Color(0xff2364c9),Color(0xff18a5a1)]),borderRadius: BorderRadius.circular(18)),
               child: Text(tr('تعلم واحسب وراجع حساباتك — دون إنترنت','Learn, calculate and review — offline'),
                 style: const TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.bold))),
             SizedBox(height: 110,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: names.length,itemBuilder: (context,i) =>
               Padding(padding: const EdgeInsets.all(4),child: InkWell(onTap: () => setState(() => tab=i),
                 child: Container(width: 102,padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: tab==i ? const Color(0xffc6e9ea) : const Color(0xffedf3f4),borderRadius: BorderRadius.circular(12)),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i],size:22),const SizedBox(height: 4),Flexible(child:Text(names[i],textAlign: TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12)))])))))),
+                  decoration: BoxDecoration(color:tab==i?palette[i]:palette[i].withValues(alpha:0.12),border:Border.all(color:palette[i].withValues(alpha:0.3)),borderRadius: BorderRadius.circular(14)),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(icons[i],size:24,color:tab==i?Colors.white:palette[i]),const SizedBox(height: 4),Flexible(child:Text(names[i],textAlign: TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:12,fontWeight:tab==i?FontWeight.bold:FontWeight.w600,color:tab==i?Colors.white:const Color(0xff28344c))))])))))),
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
               FinanceToolsScreen(key: ValueKey('finance'+en.toString()),en: en),
