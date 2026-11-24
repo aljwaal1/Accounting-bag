@@ -9,8 +9,10 @@ class SmartTools extends StatefulWidget {
 class _SmartToolsState extends State<SmartTools>{
   int mode=0, selected=0;
   final amount=TextEditingController(), rate=TextEditingController(), other=TextEditingController();
+  final fourth=TextEditingController(), fifth=TextEditingController();
+  bool fifo=true, prepaid=true;
   String t(String ar,String en)=>widget.en?en:ar;
-  @override void dispose(){amount.dispose();rate.dispose();other.dispose();super.dispose();}
+  @override void dispose(){amount.dispose();rate.dispose();other.dispose();fourth.dispose();fifth.dispose();super.dispose();}
   double? read(TextEditingController c){
     final v=double.tryParse(c.text.trim().replaceAll(',',''));
     return v!=null&&v.isFinite&&v>=0?v:null;
@@ -47,9 +49,26 @@ class _SmartToolsState extends State<SmartTools>{
       final diff=a-b;
       result='${t("فرق المدين والدائن","Debit less credit")}: ${diff.toStringAsFixed(2)}\n${diff.abs()<0.005?t("متوازن حسابيًا؛ لا يثبت صحة التصنيف","Arithmetically balanced; classification not verified"):t("راجع مصدر الفرق ولا تسجل قيدًا وهميًا","Investigate the difference; do not post a fictitious entry")}';
     }
+    if(mode==3){
+      final d=read(fourth), sold=read(fifth);
+      if(a!=null&&b!=null&&c!=null&&d!=null&&sold!=null&&a+c>0&&sold<=a+c){
+        final total=a*b+c*d;
+        final first=sold<a?sold:a;
+        final cost=fifo?first*b+(sold-first)*d:sold*total/(a+c);
+        if(total.isFinite&&cost.isFinite){
+          result='${t("تكلفة البضاعة المباعة","Cost of goods sold")}: ${cost.toStringAsFixed(2)}\n${t("مخزون آخر المدة","Ending inventory")}: ${(total-cost).toStringAsFixed(2)}\n${t("الكمية المتبقية","Remaining units")}: ${(a+c-sold).toStringAsFixed(2)}';
+        }
+      }
+    }
+    if(mode==4&&a!=null&&b!=null&&b>0&&c!=null&&c<=b){
+      final used=a*(c/b);
+      final debit=prepaid?t('مصروف الفترة','Period expense'):t('إيراد مؤجل','Deferred revenue');
+      final credit=prepaid?t('مصروف مقدم','Prepaid expense'):t('إيراد الفترة','Period revenue');
+      result='${t("المبلغ المعترف به","Recognized amount")}: ${used.toStringAsFixed(2)}\n${t("الرصيد المتبقي","Remaining balance")}: ${(a-used).toStringAsFixed(2)}\n${t("مدين","Debit")}: $debit — ${used.toStringAsFixed(2)}\n${t("دائن","Credit")}: $credit — ${used.toStringAsFixed(2)}';
+    }
     Widget field(TextEditingController ctrl,String label)=>Padding(padding:const EdgeInsets.only(bottom:12),child:TextField(controller:ctrl,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:label),onChanged:(_)=>setState((){})));
     return ListView(padding:const EdgeInsets.all(12),children:[
-      Wrap(spacing:8,runSpacing:8,children:List.generate(3,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();})))),
+      Wrap(spacing:8,runSpacing:8,children:List.generate(5,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();})))),
       const SizedBox(height:12),
       if(mode==0)...[
         DropdownButtonFormField<int>(initialValue:selected,isExpanded:true,items:List.generate(cases.length,(i)=>DropdownMenuItem(value:i,child:Text(cases[i][0],overflow:TextOverflow.ellipsis))),onChanged:(v)=>setState(()=>selected=v??0)),
@@ -64,6 +83,22 @@ class _SmartToolsState extends State<SmartTools>{
         Text(t('سعر البيع = التكلفة ÷ (1 − هامش الربح). الهامش أقل من 100%.','Price = cost / (1 − margin). Margin must be below 100%.')),
       ],
       if(mode==2)...[field(amount,t('إجمالي المدين','Total debit')),field(rate,t('إجمالي الدائن','Total credit'))],
+      if(mode==3)...[
+        SwitchListTile(title:Text(fifo?'FIFO':t('المتوسط المرجح الدوري','Periodic weighted average')),value:fifo,onChanged:(v)=>setState(()=>fifo=v)),
+        field(amount,t('كمية الدفعة الأولى','First lot quantity')),
+        field(rate,t('تكلفة وحدة الدفعة الأولى','First lot unit cost')),
+        field(other,t('كمية الدفعة الثانية','Second lot quantity')),
+        field(fourth,t('تكلفة وحدة الدفعة الثانية','Second lot unit cost')),
+        field(fifth,t('الكمية المباعة','Units sold')),
+        Text(t('دفعتان متاحتان قبل البيع؛ لا تتجاوز الكمية المباعة إجمالي الكمية.','Two lots available before sale; sold units must not exceed available units.')),
+      ],
+      if(mode==4)...[
+        SwitchListTile(title:Text(prepaid?t('مصروف مدفوع مقدمًا','Prepaid expense'):t('إيراد مؤجل','Deferred revenue')),value:prepaid,onChanged:(v)=>setState(()=>prepaid=v)),
+        field(amount,t('المبلغ الإجمالي المدفوع أو المقبوض مقدمًا','Total advance amount')),
+        field(rate,t('إجمالي مدة التغطية','Total coverage duration')),
+        field(other,t('المدة المستنفدة','Elapsed duration')),
+        Text(t('استخدم وحدة زمنية واحدة؛ يفترض الاعتراف بالتساوي على المدة. القيد يفترض عدم تسجيل تسويات سابقة.','Use the same time unit; assumes straight-line recognition and no prior adjustments.')),
+      ],
       if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
     ]);
   }
