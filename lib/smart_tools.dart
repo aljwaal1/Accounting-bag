@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class SmartTools extends StatefulWidget {
   final bool en;
@@ -8,6 +10,42 @@ class SmartTools extends StatefulWidget {
 }
 class _SmartToolsState extends State<SmartTools>{
   int mode=0, selected=0;
+  List<String> history=[];
+  @override void initState(){super.initState();loadHistory();}
+  Future<void> loadHistory() async {
+    final p=await SharedPreferences.getInstance();
+    if(mounted)setState(()=>history=p.getStringList('smart_history')??[]);
+  }
+  Future<void> saveResult(String value) async {
+    final p=await SharedPreferences.getInstance();
+    final items=[value,...(p.getStringList('smart_history')??[])];
+    await p.setStringList('smart_history',items);
+    if(mounted)setState(()=>history=items);
+  }
+  Future<void> restoreHistory(String value) async {
+    final decoded=jsonDecode(value);
+    if(decoded is! List || decoded.any((e)=>e is! String))throw const FormatException();
+    final items=decoded.cast<String>();
+    final p=await SharedPreferences.getInstance();
+    await p.setStringList('smart_history',items);
+    if(mounted)setState(()=>history=items);
+  }
+  Future<void> showHistory() async {
+    final controller=TextEditingController();
+    await showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+      title:Text(t('النتائج المحفوظة والنسخ الاحتياطي','Saved results and backup')),
+      content:SizedBox(width:400,child:SingleChildScrollView(child:Column(children:[
+        ...history.map((e)=>Padding(padding:const EdgeInsets.only(bottom:12),child:SelectableText(e))),
+        TextField(controller:controller,maxLines:3,decoration:InputDecoration(labelText:t('الصق نسخة JSON للاستعادة','Paste JSON backup to restore'))),
+        Text(t('الاستعادة تستبدل سجل النتائج الحالي.','Restore replaces current result history.')),
+      ]))),
+      actions:[
+        TextButton(onPressed:()=>Clipboard.setData(ClipboardData(text:jsonEncode(history))),child:Text(t('نسخ احتياطي','Copy backup'))),
+        TextButton(onPressed:() async {try{await restoreHistory(controller.text);if(ctx.mounted)Navigator.pop(ctx);}catch(_){if(ctx.mounted)ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content:Text(t('نسخة غير صالحة أو تعذر الحفظ','Invalid backup or save failed'))));}},child:Text(t('استعادة','Restore'))),
+        TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(t('إغلاق','Close'))),
+      ]));
+    controller.dispose();
+  }
   final amount=TextEditingController(), rate=TextEditingController(), other=TextEditingController();
   final fourth=TextEditingController(), fifth=TextEditingController();
   bool fifo=true, prepaid=true;
@@ -129,6 +167,7 @@ class _SmartToolsState extends State<SmartTools>{
     }
     Widget field(TextEditingController ctrl,String label)=>Padding(padding:const EdgeInsets.only(bottom:12),child:TextField(controller:ctrl,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:label),onChanged:(_)=>setState((){})));
     return ListView(padding:const EdgeInsets.all(12),children:[
+      OutlinedButton.icon(onPressed:showHistory,icon:const Icon(Icons.history),label:Text(t('النتائج المحفوظة','Saved results'))),
       Wrap(spacing:8,runSpacing:8,children:List.generate(9,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments'),t('تكاليف المشاريع','Project costs'),t('تشخيص مالي','Financial check'),t('قيد شراء مركب','Compound purchase'),t('مخزون متعدد','Multiple lots')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();lots.clear();})))),
       const SizedBox(height:12),
       if(mode==0)...[
@@ -165,7 +204,7 @@ class _SmartToolsState extends State<SmartTools>{
       if(mode==7)...[field(amount,t('قيمة الشراء قبل الضريبة','Purchase before tax')),field(rate,t('ضريبة قابلة للاسترداد','Recoverable tax amount')),field(other,t('المدفوع نقدًا','Cash paid')),Text(t('يفترض قابلية استرداد الضريبة بالكامل.','Assumes fully recoverable input tax.'))],
       if(mode==8)...[SwitchListTile(title:Text(fifo?'FIFO':t('المتوسط المرجح الدوري','Periodic weighted average')),value:fifo,onChanged:(v)=>setState(()=>fifo=v)),TextField(controller:lots,maxLines:5,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:t('كل دفعة في سطر: الكمية;تكلفة الوحدة','One lot per line: quantity;unit cost'),hintText:'10;5\n20;6')),const SizedBox(height:12),field(amount,t('الكمية المباعة','Units sold'))],
       if(result==null && amount.text.trim().isNotEmpty) Padding(padding:const EdgeInsets.all(8),child:Text(t('أكمل المدخلات وتحقق من الحدود الموضحة.','Complete the inputs and check the stated limits.'))),
-      if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
+      if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),TextButton.icon(onPressed:() async {try{await saveResult(result!);if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تم الحفظ','Saved'))));}catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر الحفظ','Save failed'))));}},icon:const Icon(Icons.save),label:Text(t('حفظ النتيجة','Save result'))),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
     ]);
   }
 }
