@@ -1,4 +1,5 @@
 import 'feasibility.dart';
+import 'smart_tools.dart';
 import 'comprehensive_ratios.dart';
 import 'accounting_metrics.dart';
 import 'finance_tools.dart';
@@ -13,12 +14,12 @@ class _AppState extends State<AccountingBag> {
   int tab = 0;
   String tr(String ar, String eng) => en ? eng : ar;
   @override Widget build(BuildContext context) {
-    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates')];
-    final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.assessment,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description];
+    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates'),tr('أدوات ذكية','Smart tools')];
+    final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.assessment,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description,Icons.auto_awesome];
     const palette=<Color>[
       Color(0xff1479c9),Color(0xff7b55cc),Color(0xffe58a27),
       Color(0xff159b86),Color(0xffd85a87),Color(0xff6b78d8),
-      Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),
+      Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),Color(0xff087e87),
     ];
     final scheme=ColorScheme.fromSeed(seedColor:const Color(0xff3568c9),brightness:Brightness.light);
     return MaterialApp(
@@ -61,7 +62,8 @@ class _AppState extends State<AccountingBag> {
               QuizScreen(key: ValueKey('quiz'+en.toString()),en: en),
               NotesScreen(en: en,entries: false),
               NotesScreen(en: en,entries: true),
-              TemplatesScreen(en: en)
+              TemplatesScreen(en: en),
+              SmartTools(en: en)
             ]))
           ]),
         )),
