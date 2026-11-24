@@ -11,8 +11,9 @@ class _SmartToolsState extends State<SmartTools>{
   final amount=TextEditingController(), rate=TextEditingController(), other=TextEditingController();
   final fourth=TextEditingController(), fifth=TextEditingController();
   bool fifo=true, prepaid=true;
+  final lots=TextEditingController();
   String t(String ar,String en)=>widget.en?en:ar;
-  @override void dispose(){amount.dispose();rate.dispose();other.dispose();fourth.dispose();fifth.dispose();super.dispose();}
+  @override void dispose(){amount.dispose();rate.dispose();other.dispose();fourth.dispose();fifth.dispose();lots.dispose();super.dispose();}
   double? read(TextEditingController c){
     final v=double.tryParse(c.text.trim().replaceAll(',',''));
     return v!=null&&v.isFinite&&v>=0?v:null;
@@ -91,9 +92,44 @@ class _SmartToolsState extends State<SmartTools>{
       final credit=prepaid?t('مصروف مقدم','Prepaid expense'):t('إيراد الفترة','Period revenue');
       result='${t("المبلغ المعترف به","Recognized amount")}: ${used.toStringAsFixed(2)}\n${t("الرصيد المتبقي","Remaining balance")}: ${(a-used).toStringAsFixed(2)}\n${t("مدين","Debit")}: $debit — ${used.toStringAsFixed(2)}\n${t("دائن","Credit")}: $credit — ${used.toStringAsFixed(2)}';
     }
+    if(mode==5&&a!=null&&b!=null&&c!=null){
+      final cost=b+c;
+      if(cost.isFinite){
+        final profit=a-cost;
+        result='${t("إجمالي تكلفة المشروع","Total project cost")}: ${cost.toStringAsFixed(2)}\n${t("ربح أو خسارة المشروع","Project profit or loss")}: ${profit.toStringAsFixed(2)}\n${t("هامش الربح","Profit margin")}: ${a>0?(profit/a*100).toStringAsFixed(2)+"%":t("غير معرف","Undefined")}';
+      }
+    }
+    if(mode==6&&a!=null&&b!=null&&c!=null){
+      final equity=a-b;
+      result='${t("حقوق الملكية المستنتجة","Implied equity")}: ${equity.toStringAsFixed(2)}\n${t("فرق المعادلة المحاسبية","Accounting equation difference")}: ${(equity-c).toStringAsFixed(2)}\n${a>0?t("نسبة الالتزامات للأصول","Liabilities to assets")+": "+(b/a*100).toStringAsFixed(2)+"%":t("النسبة غير معرفة","Ratio undefined")}\n${equity<0?t("تنبيه: الالتزامات تتجاوز الأصول","Warning: liabilities exceed assets"):t("التقييم يحتاج مقارنة تاريخية وقطاعية","Assessment requires historical and industry comparison")}';
+    }
+    if(mode==7&&a!=null&&b!=null&&c!=null){
+      final gross=a+b;
+      if(gross.isFinite&&c<=gross){
+        result='${t("مدين: الأصل أو المصروف","Debit: asset or expense")}: ${a.toStringAsFixed(2)}\n${t("مدين: ضريبة مدخلات قابلة للاسترداد","Debit: recoverable input tax")}: ${b.toStringAsFixed(2)}\n${t("دائن: النقدية","Credit: cash")}: ${c.toStringAsFixed(2)}\n${t("دائن: الموردون","Credit: payables")}: ${(gross-c).toStringAsFixed(2)}';
+      }
+    }
+    if(mode==8&&a!=null){
+      final rows=lots.text.trim().split('\n');
+      double quantity=0,total=0,cost=0,remaining=a;
+      bool valid=lots.text.trim().isNotEmpty;
+      for(final row in rows){
+        final parts=row.trim().split(';');
+        if(parts.length!=2){valid=false;break;}
+        final q=double.tryParse(parts[0].trim()),p=double.tryParse(parts[1].trim());
+        if(q==null||p==null||!q.isFinite||!p.isFinite||q<=0||p<0){valid=false;break;}
+        quantity+=q;total+=q*p;
+        final used=remaining<q?remaining:q;
+        cost+=used*p;remaining-=used;
+      }
+      if(valid&&quantity.isFinite&&total.isFinite&&a<=quantity&&quantity>0){
+        if(!fifo)cost=a/quantity*total;
+        result='${t("تكلفة المبيعات","Cost of sales")}: ${cost.toStringAsFixed(2)}\n${t("المخزون المتبقي","Ending inventory")}: ${(total-cost).toStringAsFixed(2)}\n${t("الكمية المتبقية","Remaining quantity")}: ${(quantity-a).toStringAsFixed(2)}';
+      }
+    }
     Widget field(TextEditingController ctrl,String label)=>Padding(padding:const EdgeInsets.only(bottom:12),child:TextField(controller:ctrl,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:label),onChanged:(_)=>setState((){})));
     return ListView(padding:const EdgeInsets.all(12),children:[
-      Wrap(spacing:8,runSpacing:8,children:List.generate(5,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();})))),
+      Wrap(spacing:8,runSpacing:8,children:List.generate(9,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments'),t('تكاليف المشاريع','Project costs'),t('تشخيص مالي','Financial check'),t('قيد شراء مركب','Compound purchase'),t('مخزون متعدد','Multiple lots')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();lots.clear();})))),
       const SizedBox(height:12),
       if(mode==0)...[
         DropdownButtonFormField<int>(initialValue:selected,isExpanded:true,items:List.generate(cases.length,(i)=>DropdownMenuItem(value:i,child:Text(cases[i][0],overflow:TextOverflow.ellipsis))),onChanged:(v)=>setState(()=>selected=v??0)),
@@ -124,6 +160,10 @@ class _SmartToolsState extends State<SmartTools>{
         field(other,t('المدة المستنفدة','Elapsed duration')),
         Text(t('استخدم وحدة زمنية واحدة؛ يفترض الاعتراف بالتساوي على المدة. القيد يفترض عدم تسجيل تسويات سابقة.','Use the same time unit; assumes straight-line recognition and no prior adjustments.')),
       ],
+      if(mode==5)...[field(amount,t('إيرادات المشروع','Project revenue')),field(rate,t('التكاليف المباشرة','Direct costs')),field(other,t('التكاليف غير المباشرة المخصصة','Allocated indirect costs'))],
+      if(mode==6)...[field(amount,t('إجمالي الأصول','Total assets')),field(rate,t('إجمالي الالتزامات','Total liabilities')),field(other,t('حقوق الملكية المسجلة (غير سالبة)','Recorded equity (nonnegative)'))],
+      if(mode==7)...[field(amount,t('قيمة الشراء قبل الضريبة','Purchase before tax')),field(rate,t('ضريبة قابلة للاسترداد','Recoverable tax amount')),field(other,t('المدفوع نقدًا','Cash paid')),Text(t('يفترض قابلية استرداد الضريبة بالكامل.','Assumes fully recoverable input tax.'))],
+      if(mode==8)...[SwitchListTile(title:Text(fifo?'FIFO':t('المتوسط المرجح الدوري','Periodic weighted average')),value:fifo,onChanged:(v)=>setState(()=>fifo=v)),TextField(controller:lots,maxLines:5,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:t('كل دفعة في سطر: الكمية;تكلفة الوحدة','One lot per line: quantity;unit cost'),hintText:'10;5\n20;6')),const SizedBox(height:12),field(amount,t('الكمية المباعة','Units sold'))],
       if(result==null && amount.text.trim().isNotEmpty) Padding(padding:const EdgeInsets.all(8),child:Text(t('أكمل المدخلات وتحقق من الحدود الموضحة.','Complete the inputs and check the stated limits.'))),
       if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
     ]);
