@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:excel/excel.dart' as xl;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SmartTools extends StatefulWidget {
   final bool en;
@@ -29,6 +35,40 @@ class _SmartToolsState extends State<SmartTools>{
     final p=await SharedPreferences.getInstance();
     await p.setStringList('smart_history',items);
     if(mounted)setState(()=>history=items);
+  }
+  Future<void> exportResult(String value, bool pdf) async {
+    try {
+      if(pdf){
+        final doc=pw.Document();
+        pw.Font? font;
+        if(!widget.en){
+          for(final path in ['/system/fonts/NotoNaskhArabic-Regular.ttf','/system/fonts/NotoSansArabic-Regular.ttf']){
+            final file=File(path);
+            if(await file.exists()){font=pw.Font.ttf(ByteData.sublistView(await file.readAsBytes()));break;}
+          }
+          if(font==null)throw StateError('Arabic font unavailable');
+        }
+        doc.addPage(pw.MultiPage(build:(_)=>[
+          pw.Directionality(textDirection:widget.en?pw.TextDirection.ltr:pw.TextDirection.rtl,child:pw.Column(crossAxisAlignment:pw.CrossAxisAlignment.stretch,children:[
+            pw.Text(t('الحقيبة المحاسبية','Accounting Bag'),style:pw.TextStyle(font:font,fontSize:22)),
+            ...value.split('\n').map((line)=>pw.Padding(padding:const pw.EdgeInsets.all(6),child:pw.Text(line,style:pw.TextStyle(font:font,fontSize:13)))),
+          ])),
+        ]));
+        await Printing.sharePdf(bytes:await doc.save(),filename:'accounting-result.pdf');
+      }else{
+        final book=xl.Excel.createExcel();
+        final sheet=book['Sheet1'];
+        sheet.appendRow([xl.TextCellValue(t('النتيجة','Result'))]);
+        for(final line in value.split('\n')){
+          sheet.appendRow([xl.TextCellValue(line)]);
+        }
+        final bytes=book.encode();
+        if(bytes==null)throw StateError('Excel encoding failed');
+        await Share.shareXFiles([XFile.fromData(Uint8List.fromList(bytes),mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],fileNameOverrides:['accounting-result.xlsx']);
+      }
+    }catch(_){
+      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر التصدير على هذا الجهاز','Export failed on this device'))));
+    }
   }
   Future<void> showHistory() async {
     final controller=TextEditingController();
@@ -204,7 +244,7 @@ class _SmartToolsState extends State<SmartTools>{
       if(mode==7)...[field(amount,t('قيمة الشراء قبل الضريبة','Purchase before tax')),field(rate,t('ضريبة قابلة للاسترداد','Recoverable tax amount')),field(other,t('المدفوع نقدًا','Cash paid')),Text(t('يفترض قابلية استرداد الضريبة بالكامل.','Assumes fully recoverable input tax.'))],
       if(mode==8)...[SwitchListTile(title:Text(fifo?'FIFO':t('المتوسط المرجح الدوري','Periodic weighted average')),value:fifo,onChanged:(v)=>setState(()=>fifo=v)),TextField(controller:lots,maxLines:5,onChanged:(_)=>setState((){}),decoration:InputDecoration(labelText:t('كل دفعة في سطر: الكمية;تكلفة الوحدة','One lot per line: quantity;unit cost'),hintText:'10;5\n20;6')),const SizedBox(height:12),field(amount,t('الكمية المباعة','Units sold'))],
       if(result==null && amount.text.trim().isNotEmpty) Padding(padding:const EdgeInsets.all(8),child:Text(t('أكمل المدخلات وتحقق من الحدود الموضحة.','Complete the inputs and check the stated limits.'))),
-      if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),TextButton.icon(onPressed:() async {try{await saveResult(result!);if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تم الحفظ','Saved'))));}catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر الحفظ','Save failed'))));}},icon:const Icon(Icons.save),label:Text(t('حفظ النتيجة','Save result'))),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
+      if(result!=null)Card(color:const Color(0xffe5f5ef),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[SelectableText(result,style:const TextStyle(fontSize:17)),Wrap(children:[TextButton(onPressed:()=>exportResult(result!,true),child:const Text('PDF')),TextButton(onPressed:()=>exportResult(result!,false),child:const Text('Excel'))]),TextButton.icon(onPressed:() async {try{await saveResult(result!);if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تم الحفظ','Saved'))));}catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر الحفظ','Save failed'))));}},icon:const Icon(Icons.save),label:Text(t('حفظ النتيجة','Save result'))),TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:result!)),icon:const Icon(Icons.copy),label:Text(t('نسخ النتيجة','Copy result')))]))),
     ]);
   }
 }
