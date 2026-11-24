@@ -24,16 +24,16 @@ class _SmartToolsState extends State<SmartTools>{
   }
   Future<void> saveResult(String value) async {
     final p=await SharedPreferences.getInstance();
-    final items=[value,...(p.getStringList('smart_history')??[])];
-    await p.setStringList('smart_history',items);
+    final items=<String>[value,...(p.getStringList('smart_history')??const <String>[])];
+    if(!await p.setStringList('smart_history',items))throw StateError('Save failed');
     if(mounted)setState(()=>history=items);
   }
   Future<void> restoreHistory(String value) async {
     final decoded=jsonDecode(value);
     if(decoded is! List || decoded.any((e)=>e is! String))throw const FormatException();
-    final items=decoded.cast<String>();
+    final items=List<String>.from(decoded);
     final p=await SharedPreferences.getInstance();
-    await p.setStringList('smart_history',items);
+    if(!await p.setStringList('smart_history',items))throw StateError('Save failed');
     if(mounted)setState(()=>history=items);
   }
   Future<void> exportResult(String value, bool pdf) async {
