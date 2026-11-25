@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'number_input.dart';
 import 'feasibility.dart';
 import 'smart_tools.dart';
@@ -18,6 +19,26 @@ class _AppState extends State<AccountingBag> {
   String query='';
   bool onlyFavorites=false;
   bool expandedTools=false;
+  @override void initState(){super.initState();loadSettings();}
+  Future<void> loadSettings() async {
+    try {
+      final p=await SharedPreferences.getInstance();
+      if(!mounted)return;
+      setState((){
+        dark=p.getBool('bag_dark')??false;
+        en=p.getBool('bag_english')??false;
+        favorites.addAll((p.getStringList('bag_favorites')??[]).map(int.tryParse).whereType<int>().where((i)=>i>=0&&i<10));
+      });
+    }catch(_){ /* defaults remain available */ }
+  }
+  Future<void> saveSettings() async {
+    try {
+      final p=await SharedPreferences.getInstance();
+      await p.setBool('bag_dark',dark);
+      await p.setBool('bag_english',en);
+      await p.setStringList('bag_favorites',favorites.map((i)=>i.toString()).toList());
+    }catch(_){ /* settings remain usable for this session */ }
+  }
   String tr(String ar, String eng) => en ? eng : ar;
   @override Widget build(BuildContext context) {
     final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates'),tr('أدوات ذكية','Smart tools')];
@@ -27,7 +48,7 @@ class _AppState extends State<AccountingBag> {
       Color(0xff159b86),Color(0xffd85a87),Color(0xff6b78d8),
       Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),Color(0xff087e87),
     ];
-    final scheme=ColorScheme.fromSeed(seedColor:const Color(0xff3568c9),brightness:dark?Brightness.dark:Brightness.light);
+    final scheme=ColorScheme.fromSeed(seedColor:const Color(0xff3568c9),brightness:Brightness.light);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -49,11 +70,11 @@ class _AppState extends State<AccountingBag> {
       home: Directionality(textDirection: en ? TextDirection.ltr : TextDirection.rtl,
         child: Scaffold(
           appBar: AppBar(title: Text(tr('الحقيبة المحاسبية','Accounting Bag')),actions: [
-            IconButton(tooltip:tr('الوضع الليلي','Dark mode'),onPressed:()=>setState(()=>dark=!dark),icon:Icon(dark?Icons.light_mode:Icons.dark_mode)),
-            TextButton(onPressed: () => setState(() => en = !en), child: Text(en ? 'العربية' : 'English'))
+            IconButton(tooltip:tr('الوضع الليلي','Dark mode'),onPressed:(){setState(()=>dark=!dark);saveSettings();},icon:Icon(dark?Icons.light_mode:Icons.dark_mode)),
+            TextButton(onPressed: () {setState(() => en = !en);saveSettings();}, child: Text(en ? 'العربية' : 'English'))
           ]),
-          body: Column(children: [
-            Container(width: double.infinity,margin: const EdgeInsets.all(12),padding: const EdgeInsets.all(18),
+          body: LayoutBuilder(builder:(context,constraints)=>Column(children: [
+            if(constraints.maxHeight>480) Container(width: double.infinity,margin: const EdgeInsets.all(12),padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(gradient:const LinearGradient(colors:[Color(0xff2364c9),Color(0xff18a5a1)]),borderRadius: BorderRadius.circular(18)),
               child: Text(tr('تعلم واحسب وراجع حساباتك — دون إنترنت','Learn, calculate and review — offline'),
                 style: const TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.bold))),
@@ -62,9 +83,9 @@ class _AppState extends State<AccountingBag> {
               IconButton(tooltip:tr('المفضلة','Favorites'),onPressed:()=>setState(()=>onlyFavorites=!onlyFavorites),icon:Icon(onlyFavorites?Icons.star:Icons.star_border)),
               IconButton(tooltip:tr('عرض الأقسام','Show sections'),onPressed:()=>setState(()=>expandedTools=!expandedTools),icon:Icon(expandedTools?Icons.view_agenda:Icons.grid_view)),
             ])),
-            SizedBox(height:expandedTools?180:88,child:GridView.count(crossAxisCount:expandedTools?3:1,scrollDirection:expandedTools?Axis.vertical:Axis.horizontal,childAspectRatio:expandedTools?2.2:0.8,padding:const EdgeInsets.all(6),children:[
+            SizedBox(height:expandedTools&&constraints.maxHeight>480?180:88,child:GridView.count(crossAxisCount:expandedTools&&constraints.maxHeight>480?3:1,scrollDirection:expandedTools&&constraints.maxHeight>480?Axis.vertical:Axis.horizontal,childAspectRatio:expandedTools&&constraints.maxHeight>480?2.2:0.8,padding:const EdgeInsets.all(6),children:[
               for(var i=0;i<names.length;i++)if(names[i].toLowerCase().contains(query.toLowerCase())&&(!onlyFavorites||favorites.contains(i)))
-                Padding(padding:const EdgeInsets.all(3),child:Material(color:tab==i?palette[i]:palette[i].withValues(alpha:0.16),borderRadius:BorderRadius.circular(12),child:InkWell(onTap:()=>setState(()=>tab=i),onLongPress:()=>setState(()=>favorites.contains(i)?favorites.remove(i):favorites.add(i)),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(favorites.contains(i)?Icons.star:icons[i],color:tab==i?Colors.white:palette[i]),Flexible(child:Text(names[i],textAlign:TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:tab==i?Colors.white:null)))])))),
+                Padding(padding:const EdgeInsets.all(3),child:Material(color:tab==i?palette[i]:palette[i].withValues(alpha:0.16),borderRadius:BorderRadius.circular(12),child:InkWell(onTap:()=>setState(()=>tab=i),onLongPress:(){setState(()=>favorites.contains(i)?favorites.remove(i):favorites.add(i));saveSettings();},child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(favorites.contains(i)?Icons.star:icons[i],color:tab==i?Colors.white:palette[i]),Flexible(child:Text(names[i],textAlign:TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:tab==i?Colors.white:null)))])))),
             ])),
             Expanded(child: IndexedStack(index: tab,children: [
               CalculatorScreen(key: ValueKey('calc'+en.toString()),en: en),
@@ -78,7 +99,7 @@ class _AppState extends State<AccountingBag> {
               TemplatesScreen(en: en),
               SmartTools(en: en)
             ]))
-          ]),
+          ])),
         )),
     );
   }
