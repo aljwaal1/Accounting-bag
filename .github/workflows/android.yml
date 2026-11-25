@@ -59,6 +59,16 @@ jobs:
             build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Build release app bundle
+        if: steps.release.outcome == 'success'
+        run: flutter build appbundle --release
+      - name: Upload app bundle (testing only)
+        if: steps.release.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Accounting-Bag-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
       - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4
