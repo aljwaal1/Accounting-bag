@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'number_input.dart';
 import 'project_store.dart';
+import 'history_export.dart';
 import 'dart:convert';
 
 /// Simplified management tools, not a complete IFRS financial statement.
@@ -45,7 +46,7 @@ class _ProfessionalToolsState extends State<ProfessionalTools>{
             }
           }));
         })),
-        actions:[TextButton(onPressed:()=>Navigator.of(dialogContext).pop(),child:Text(t('إغلاق','Close')))]));
+        actions:[for(final format in ['PDF','Excel','CSV']) TextButton(onPressed:rows.isEmpty?null:() async {try{await HistoryExport.share(rows,widget.en,format);}catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر التصدير','Export failed'))));}},child:Text(format)),TextButton(onPressed:()=>Navigator.of(dialogContext).pop(),child:Text(t('إغلاق','Close')))]));
     }catch(_){
       if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر قراءة السجل','Could not read history'))));
     }
