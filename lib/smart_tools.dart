@@ -16,6 +16,7 @@ class SmartTools extends StatefulWidget {
 }
 class _SmartToolsState extends State<SmartTools>{
   int mode=0, selected=0;
+  String journalQuery='';
   List<String> history=[];
   @override void initState(){super.initState();loadHistory();}
   Future<void> loadHistory() async {
@@ -201,9 +202,10 @@ class _SmartToolsState extends State<SmartTools>{
       [t("إعادة بضاعة مرتجعة صالحة للمخزون بالتكلفة","Restore saleable returned goods at cost"),t("المخزون","Inventory"),t("تكلفة المبيعات","Cost of sales")],
       [t("إثبات عجز مخزون مؤكد غير قابل للاسترداد","Recognize confirmed inventory shortage"),t("خسارة عجز المخزون","Inventory shortage loss"),t("المخزون","Inventory")],
     ];
+    final matches=List<int>.generate(cases.length,(i)=>i).where((i)=>cases[i].join(' ').toLowerCase().contains(journalQuery.trim().toLowerCase())).toList();
     final a=read(amount),b=read(rate),c=read(other,signed:mode==6);
     String? result;
-    if(mode==0&&a!=null&&a>0){
+    if(mode==0&&a!=null&&a>0&&matches.contains(selected)){
       final entry=cases[selected];
       result='${t("مدين","Debit")}: ${entry[1]} — ${a.toStringAsFixed(2)}\n${t("دائن","Credit")}: ${entry[2]} — ${a.toStringAsFixed(2)}\n${t("الفرق: صفر — القيد متوازن","Difference: zero — balanced entry")}';
     }else if(mode==1&&a!=null&&a>0&&b!=null&&b<100&&c!=null){
@@ -282,10 +284,14 @@ class _SmartToolsState extends State<SmartTools>{
     Widget field(TextEditingController ctrl,String label)=>Padding(padding:const EdgeInsets.only(bottom:12),child:TextField(controller:ctrl,keyboardType:TextInputType.numberWithOptions(decimal:true,signed:mode==6&&ctrl==other),decoration:InputDecoration(labelText:label),onChanged:(_)=>setState((){})));
     return ListView(padding:const EdgeInsets.all(12),children:[
       OutlinedButton.icon(onPressed:showHistory,icon:const Icon(Icons.history),label:Text(t('النتائج المحفوظة','Saved results'))),
-      Wrap(spacing:8,runSpacing:8,children:List.generate(11,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments'),t('تكاليف المشاريع','Project costs'),t('تشخيص مالي','Financial check'),t('قيد شراء مركب','Compound purchase'),t('مخزون متعدد','Multiple lots'),t('بيع مركب','Compound sale'),t('تسوية مستحقات','Accrual adjustment')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();lots.clear();})))),
+      Wrap(spacing:8,runSpacing:8,children:List.generate(11,(i)=>ChoiceChip(label:Text([t('القيود الذكية','Smart entries'),t('التسعير','Pricing'),t('فحص التوازن','Balance check'),t('المخزون','Inventory'),t('التسويات','Adjustments'),t('تكاليف المشاريع','Project costs'),t('تشخيص مالي','Financial check'),t('قيد شراء مركب','Compound purchase'),t('مخزون متعدد','Multiple lots'),t('بيع مركب','Compound sale'),t('تسوية مستحقات','Accrual adjustment')][i]),selected:mode==i,onSelected:(_)=>setState((){mode=i;journalQuery='';amount.clear();rate.clear();other.clear();fourth.clear();fifth.clear();lots.clear();})))),
       const SizedBox(height:12),
       if(mode==0)...[
-        DropdownButtonFormField<int>(initialValue:selected,isExpanded:true,items:List.generate(cases.length,(i)=>DropdownMenuItem(value:i,child:Text(cases[i][0],overflow:TextOverflow.ellipsis))),onChanged:(v)=>setState(()=>selected=v??0)),
+        TextField(decoration:InputDecoration(prefixIcon:const Icon(Icons.search),labelText:t('ابحث عن عملية أو حساب','Search transaction or account')),onChanged:(v)=>setState(()=>journalQuery=v)),
+        const SizedBox(height:8),
+        Text('${matches.length} / ${cases.length}'),
+        if(matches.isEmpty)Text(t('لا توجد نتائج مطابقة','No matching entries')),
+        if(matches.isNotEmpty)DropdownButton<int>(value:matches.contains(selected)?selected:null,isExpanded:true,hint:Text(t('اختر العملية','Select transaction')),items:matches.map((i)=>DropdownMenuItem(value:i,child:Text(cases[i][0],overflow:TextOverflow.ellipsis))).toList(),onChanged:(v)=>setState(()=>selected=v??0)),
         const SizedBox(height:12),
         field(amount,t('المبلغ دون ضريبة','Amount excluding tax')),
         Text(t('100 حالة تعليمية مبسطة دون ضرائب أو خصومات؛ بعض العمليات تتطلب قيودًا إضافية وشروط اعتراف وقياس وفق IFRS.','100 simplified educational scenarios excluding taxes and discounts; some require additional entries and IFRS recognition and measurement criteria.')),
