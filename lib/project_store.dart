@@ -6,14 +6,15 @@ class ProjectStore {
   static Future<Database> get database => _opening ??= _open();
   static Future<Database> _open() async {
     final directory=await getDatabasesPath();
-    return openDatabase('$directory/accounting_projects.db',version:2,
+    return openAt('$directory/accounting_projects.db');
+  }
+  static Future<Database> openAt(String path) => openDatabase(path,version:2,
       onCreate:(db,version) async {
         await db.execute('CREATE TABLE projects (name TEXT PRIMARY KEY, payload TEXT NOT NULL, updated INTEGER NOT NULL)');
         await _createHistory(db);
       },onUpgrade:(db,oldVersion,newVersion) async {
         if(oldVersion<2) await _createHistory(db);
       });
-  }
   static Future<void> _createHistory(Database db) async {
     await db.execute('CREATE TABLE IF NOT EXISTS calculation_history (id INTEGER PRIMARY KEY AUTOINCREMENT, tool TEXT NOT NULL, payload TEXT NOT NULL, created INTEGER NOT NULL)');
   }
