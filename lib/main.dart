@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'feasibility.dart';
 import 'smart_tools.dart';
 import 'comprehensive_ratios.dart';
@@ -90,9 +91,9 @@ class _CalculatorState extends State<CalculatorScreen> {
  String tr(String ar,String en)=>widget.en?en:ar;
  @override void dispose(){a.dispose();b.dispose();c.dispose();super.dispose();}
  void compute(){
- final x=double.tryParse(a.text.replaceAll(',',''));
- final y=double.tryParse(b.text.replaceAll(',',''));
- final z=double.tryParse(c.text.replaceAll(',',''));
+ final x=parseAccountingNumber(a.text);
+ final y=parseAccountingNumber(b.text);
+ final z=parseAccountingNumber(c.text);
  if(x==null || y==null || (mode!=1 && z==null)){
   setState(()=>output=tr('أدخل قيمًا رقمية صحيحة','Enter valid numeric values'));return;
  }
