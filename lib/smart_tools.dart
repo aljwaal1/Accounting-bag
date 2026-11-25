@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:excel/excel.dart' as xl;
 import 'package:pdf/widgets.dart' as pw;
@@ -41,14 +40,7 @@ class _SmartToolsState extends State<SmartTools>{
     try {
       if(pdf){
         final doc=pw.Document();
-        pw.Font? font;
-        if(!widget.en){
-          for(final path in ['/system/fonts/NotoNaskhArabic-Regular.ttf','/system/fonts/NotoSansArabic-Regular.ttf']){
-            final file=File(path);
-            if(await file.exists()){font=pw.Font.ttf(ByteData.sublistView(await file.readAsBytes()));break;}
-          }
-          if(font==null)throw StateError('Arabic font unavailable');
-        }
+        final font=pw.Font.ttf(await rootBundle.load('assets/fonts/NotoNaskhArabic-Regular.ttf'));
         doc.addPage(pw.MultiPage(build:(_)=>[
           pw.Directionality(textDirection:widget.en?pw.TextDirection.ltr:pw.TextDirection.rtl,child:pw.Column(crossAxisAlignment:pw.CrossAxisAlignment.stretch,children:[
             pw.Text(t('الحقيبة المحاسبية','Accounting Bag'),style:pw.TextStyle(font:font,fontSize:22)),
@@ -96,7 +88,12 @@ class _SmartToolsState extends State<SmartTools>{
   String t(String ar,String en)=>widget.en?en:ar;
   @override void dispose(){amount.dispose();rate.dispose();other.dispose();fourth.dispose();fifth.dispose();lots.dispose();super.dispose();}
   double? read(TextEditingController c,{bool signed=false}){
-    final v=double.tryParse(c.text.trim().replaceAll(',',''));
+    final raw=c.text.trim().replaceAll('٬','').replaceAll('٫','.').replaceAll(',','');
+    final normalized=raw.split('').map((ch){
+      final ar='٠١٢٣٤٥٦٧٨٩'.indexOf(ch),fa='۰۱۲۳۴۵۶۷۸۹'.indexOf(ch);
+      return ar>=0?ar.toString():fa>=0?fa.toString():ch;
+    }).join();
+    final v=double.tryParse(normalized);
     return v!=null&&v.isFinite&&(signed||v>=0)?v:null;
   }
   @override Widget build(BuildContext context){
