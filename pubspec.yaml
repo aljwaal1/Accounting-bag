@@ -1,10 +1,11 @@
 name: accounting_bag
 description: Offline bilingual accounting toolkit for students and professionals.
 publish_to: none
-version: 0.1.0+1
+version: 0.2.0+2
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies:
+  sqflite: ^2.4.2
   excel: ^4.0.6
   pdf: ^3.11.3
   printing: ^5.14.2
