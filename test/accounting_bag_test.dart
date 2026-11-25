@@ -42,4 +42,14 @@ void main() {
     expect(find.text('Calculators'),findsOneWidget);
     expect(find.text('Interest & Finance'),findsNothing);
   });
+  testWidgets('compact viewport remains scrollable without overflow', (tester) async {
+    tester.view.physicalSize=const Size(320,480);
+    tester.view.devicePixelRatio=1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const AccountingBag());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(),isNull);
+    expect(find.text('الحقيبة المحاسبية'),findsOneWidget);
+  });
 }
