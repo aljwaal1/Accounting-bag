@@ -201,14 +201,14 @@ class NotesScreen extends StatelessWidget{
  const notes=[
  ['المعادلة المحاسبية','Accounting equation','الأصول = الالتزامات + حقوق الملكية.','Assets = Liabilities + Equity.'],
  ['القيد المزدوج','Double-entry','لكل عملية مجموع مبالغ مدينة يساوي مجموع المبالغ الدائنة.','Every transaction has equal total debits and credits.'],
- ['أساس الاستحقاق','Accrual basis','تعترف المنشأة بالإيراد عند اكتسابه والمصروف عند تكبده.','Recognize revenue when earned and expenses when incurred.'],
+ ['أساس الاستحقاق','Accrual basis','تعترف المنشأة بالإيراد من العقود مع العملاء عند الوفاء بالتزام الأداء وفق IFRS 15، وتعترف بالمصروفات وفق متطلبات الاعتراف ذات الصلة.','Recognize revenue from customer contracts when performance obligations are satisfied under IFRS 15; recognize expenses under applicable recognition requirements.'],
  ['مجمل الربح','Gross profit','صافي المبيعات ناقص تكلفة المبيعات.','Net sales minus cost of sales.'],
  ['رأس المال العامل','Working capital','الأصول المتداولة ناقص الالتزامات المتداولة.','Current assets minus current liabilities.']
  ];
  const journals=[
  ['شراء مخزون نقدًا','Cash inventory purchase','المخزون','Inventory','النقدية','Cash','وفق نظام الجرد المستمر','Under the perpetual inventory system'],
  ['تحصيل دين من عميل','Collect receivable','النقدية','Cash','الذمم المدينة','Accounts receivable','لا ينشأ إيراد جديد من التحصيل','Collection does not create new revenue'],
- ['دفع إيجار الفترة','Pay current rent','مصروف الإيجار','Rent expense','النقدية','Cash','إثبات مصروف الإيجار المدفوع للفترة','Record current-period rent expense paid'],
+ ['دفع إيجار الفترة','Pay current rent','مصروف الإيجار','Rent expense','النقدية','Cash','مثال لإيجار معفى من إثبات أصل حق الاستخدام والتزام الإيجار وفق IFRS 16، عند اختيار الإعفاء المناسب','Example of rent eligible for an elected IFRS 16 recognition exemption'],
  ['شراء معدات بالآجل','Equipment on account','المعدات','Equipment','الذمم الدائنة','Accounts payable','إثبات أصل والتزام','Record an asset and liability'],
  ['إثبات الرواتب المستحقة','Accrue salaries','مصروف الرواتب','Salaries expense','رواتب مستحقة الدفع','Salaries payable','رواتب الفترة غير المدفوعة','Unpaid salaries for the period']
  ];
