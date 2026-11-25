@@ -31,3 +31,6 @@ Batch 5: run 75 (45588841322) successful; runs 76/77 in progress at start. f9cb3
 
 Batch 4/5 verified: runs 76–80 successful; stable run 80 (45622463458).
 Batch 6: 525c616 adds SQLite schema v2 with additive calculation_history table and v1 upgrade preserving projects; d46b7bc connects professional tools to explicit save, view and delete history. CI and device migration tests pending. History currently covers professional tools only. Remaining: structured export, migration tests, complete journal review, small-screen tests, icon and production signing. No Play publication.
+
+Batch 6 verified: runs 81–83 successful; stable run 83 (45671766773). Device migration still untested.
+Batch 7: 5671a89 adds structured history export (UTF-8 BOM CSV, XLSX numeric values, Arabic-font PDF); 53cec3f exposes export buttons in history; 9f35aec adds row, CSV and XLSX regression tests. CI pending; PDF rendering and device sharing untested. Remaining: SQLite migration tests, broader history coverage, journal review, small-screen tests, icon, privacy review and production signing. No Play publication.
