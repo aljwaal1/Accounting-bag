@@ -28,3 +28,6 @@ Batch 3 verified: run 74 (45588829558) analyze, tests, release APK and AAB build
 Batch 4: 98474bc clarifies IFRS 15 performance obligations and IFRS 16 elected rent recognition exemptions in bilingual notes and journal examples. CI pending for this change. Remaining: full journal audit, history, exports, additional statements, device tests, icon and production signing.
 
 Batch 5: run 75 (45588841322) successful; runs 76/77 in progress at start. f9cb33f adds simplified IAS 7 cash reconciliation with signed flows and separate FX effect, and contribution margin/ratio and simplified operating result. 25878dc adds numerical regression tests. CI pending; no device tests or publication. Remaining: complete statements and journal review, SQLite history, structured exports, small-screen/export tests, icon and production signing.
+
+Batch 4/5 verified: runs 76–80 successful; stable run 80 (45622463458).
+Batch 6: 525c616 adds SQLite schema v2 with additive calculation_history table and v1 upgrade preserving projects; d46b7bc connects professional tools to explicit save, view and delete history. CI and device migration tests pending. History currently covers professional tools only. Remaining: structured export, migration tests, complete journal review, small-screen tests, icon and production signing. No Play publication.
