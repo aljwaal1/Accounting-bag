@@ -1,3 +1,4 @@
+import 'professional_tools.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'number_input.dart';
 import 'feasibility.dart';
@@ -27,7 +28,7 @@ class _AppState extends State<AccountingBag> {
       setState((){
         dark=p.getBool('bag_dark')??false;
         en=p.getBool('bag_english')??false;
-        favorites.addAll((p.getStringList('bag_favorites')??[]).map(int.tryParse).whereType<int>().where((i)=>i>=0&&i<10));
+        favorites.addAll((p.getStringList('bag_favorites')??[]).map(int.tryParse).whereType<int>().where((i)=>i>=0&&i<11));
       });
     }catch(_){ /* defaults remain available */ }
   }
@@ -41,12 +42,12 @@ class _AppState extends State<AccountingBag> {
   }
   String tr(String ar, String eng) => en ? eng : ar;
   @override Widget build(BuildContext context) {
-    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates'),tr('أدوات ذكية','Smart tools')];
-    final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.assessment,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description,Icons.auto_awesome];
+    final names = [tr('الحاسبات','Calculators'),tr('الفوائد والتمويل','Interest & Finance'),tr('الإهلاك والإطفاء','Depreciation'),tr('النسب المالية','Financial Ratios'),tr('دراسة الجدوى','Feasibility'),tr('الاختبارات','Quizzes'),tr('الملخصات','Summaries'),tr('القيود','Entries'),tr('النماذج','Templates'),tr('أدوات ذكية','Smart tools'),tr('أدوات احترافية','Professional tools')];
+    final icons = [Icons.calculate,Icons.account_balance,Icons.trending_down,Icons.pie_chart,Icons.assessment,Icons.quiz,Icons.menu_book,Icons.receipt_long,Icons.description,Icons.auto_awesome,Icons.analytics];
     const palette=<Color>[
       Color(0xff1479c9),Color(0xff7b55cc),Color(0xffe58a27),
       Color(0xff159b86),Color(0xffd85a87),Color(0xff6b78d8),
-      Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),Color(0xff087e87),
+      Color(0xff229baf),Color(0xffbd7042),Color(0xff577db0),Color(0xff087e87),Color(0xff7653a6),
     ];
     final scheme=ColorScheme.fromSeed(seedColor:const Color(0xff3568c9),brightness:Brightness.light);
     return MaterialApp(
@@ -97,7 +98,8 @@ class _AppState extends State<AccountingBag> {
               NotesScreen(en: en,entries: false),
               NotesScreen(en: en,entries: true),
               TemplatesScreen(en: en),
-              SmartTools(en: en)
+              SmartTools(en: en),
+              ProfessionalTools(en:en)
             ]))
           ])),
         )),
