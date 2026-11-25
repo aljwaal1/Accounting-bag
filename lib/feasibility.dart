@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'feasibility_analysis.dart';
 import 'package:flutter/material.dart';
 
@@ -63,8 +64,8 @@ class _FeasibilityState extends State<FeasibilityScreen>{
     category.clear();description.clear();quantity.text='1';price.clear();kind=FeasibilityKind.operatingFixed;frequency=FeasibilityFrequency.monthly;editing=null;error=null;
   }
   void save(){
-    final q=double.tryParse(quantity.text.trim().replaceAll(',',''));
-    final p=double.tryParse(price.text.trim().replaceAll(',',''));
+    final q=parseAccountingNumber(quantity.text.trim());
+    final p=parseAccountingNumber(price.text.trim());
     if(category.text.trim().isEmpty || description.text.trim().isEmpty || q==null || p==null || !q.isFinite || !p.isFinite || q<=0 || p<0 ||
       ((kind==FeasibilityKind.startup || kind==FeasibilityKind.investment) && frequency!=FeasibilityFrequency.once) ||
       ((kind==FeasibilityKind.revenue || kind==FeasibilityKind.operatingFixed || kind==FeasibilityKind.operatingVariable) && frequency==FeasibilityFrequency.once)){
@@ -138,10 +139,10 @@ class _FeasibilityState extends State<FeasibilityScreen>{
       FilledButton(onPressed:()=>setState(()=>showProjection=true),child:Text(t('تحليل التدفقات والجدوى','Analyze cash flows and feasibility'))),
       if(showProjection)Builder(builder:(context){
         final n=int.tryParse(years.text.trim());
-        final rate=double.tryParse(discountRate.text.trim());
-        final rg=double.tryParse(growthRate.text.trim());
-        final cg=double.tryParse(costGrowthRate.text.trim());
-        final terminal=double.tryParse(recovery.text.trim());
+        final rate=parseAccountingNumber(discountRate.text.trim());
+        final rg=parseAccountingNumber(growthRate.text.trim());
+        final cg=parseAccountingNumber(costGrowthRate.text.trim());
+        final terminal=parseAccountingNumber(recovery.text.trim());
         if(n==null || n<1 || n>30 || rate==null || rg==null || cg==null || terminal==null ||
            !rate.isFinite || !rg.isFinite || !cg.isFinite || !terminal.isFinite ||
            rate<=-100 || rg<=-100 || cg<=-100 || terminal<0){
