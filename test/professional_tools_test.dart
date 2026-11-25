@@ -16,4 +16,12 @@ void main(){
   });
   test('inclusive VAT',()=>expect(ProfessionalMath.vatInclusive(120,20),closeTo(20,1e-9)));
   test('WACC after tax',()=>expect(ProfessionalMath.wacc(60,40,10,5,20),closeTo(7.6,1e-9)));
+  test('IAS 7 signed flows and exchange reconciliation',(){
+    expect(ProfessionalMath.cashFlow(100,80,-40,-20,5),125);
+    expect(ProfessionalMath.cashFlow(100,-80,0,-20,0),0);
+  });
+  test('contribution margin including loss',(){
+    expect(ProfessionalMath.contribution(1000,600),400);
+    expect(ProfessionalMath.contribution(100,120),-20);
+  });
 }
