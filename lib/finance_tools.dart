@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -54,7 +55,7 @@ class _FinanceToolsState extends State<FinanceToolsScreen> {
     void calculate(){
       final values=<double>[];
       for(var i=0;i<labels[mode].length;i++){
-        final value=double.tryParse(fields[i].text.trim().replaceAll(',',''));
+        final value=parseAccountingNumber(fields[i].text.trim());
         if(value==null || !value.isFinite){
           setState(()=>answer=t('أدخل أرقامًا صحيحة لجميع الحقول','Enter valid numbers in all fields'));return;
         }
