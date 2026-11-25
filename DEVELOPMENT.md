@@ -34,3 +34,5 @@ Batch 6: 525c616 adds SQLite schema v2 with additive calculation_history table a
 
 Batch 6 verified: runs 81–83 successful; stable run 83 (45671766773). Device migration still untested.
 Batch 7: 5671a89 adds structured history export (UTF-8 BOM CSV, XLSX numeric values, Arabic-font PDF); 53cec3f exposes export buttons in history; 9f35aec adds row, CSV and XLSX regression tests. CI pending; PDF rendering and device sharing untested. Remaining: SQLite migration tests, broader history coverage, journal review, small-screen tests, icon, privacy review and production signing. No Play publication.
+
+Batch 8: e62c909 adds 320x480 widget regression; ab7f7d0 exposes isolated SQLite opening; bcf569b adds FFI test backend; bafaa4b adds v1-to-v2 persistence regression; 5040d18 expands conditional IAS 16, IFRS 15 and IAS 2 journal examples. Runs 84–87 were in progress at start; new tests not yet verified. Remaining: full scientific audit, broader history, PDF rendering/device sharing, icon, privacy manifest review and production signing. No publication.
