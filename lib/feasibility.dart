@@ -1,3 +1,4 @@
+import 'project_store.dart';
 import 'number_input.dart';
 import 'feasibility_analysis.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,7 @@ class _FeasibilityState extends State<FeasibilityScreen>{
     FeasibilityFrequency.monthly=>t('شهري','Monthly'),
     FeasibilityFrequency.yearly=>t('سنوي','Yearly')
   };
-  @override void dispose(){category.dispose();description.dispose();quantity.dispose();price.dispose();discountRate.dispose();growthRate.dispose();costGrowthRate.dispose();years.dispose();recovery.dispose();super.dispose();}
+  @override void dispose(){category.dispose();description.dispose();quantity.dispose();price.dispose();discountRate.dispose();growthRate.dispose();costGrowthRate.dispose();years.dispose();recovery.dispose();projectName.dispose();super.dispose();}
   void reset(){
     category.clear();description.clear();quantity.text='1';price.clear();kind=FeasibilityKind.operatingFixed;frequency=FeasibilityFrequency.monthly;editing=null;error=null;
   }
@@ -77,6 +78,31 @@ class _FeasibilityState extends State<FeasibilityScreen>{
   void edit(int i){final x=items[i];setState((){
     editing=i;category.text=x.category;description.text=x.description;quantity.text=x.quantity.toString();price.text=x.unitPrice.toString();kind=x.kind;frequency=x.frequency;showProjection=false;error=null;
   });}
+  final projectName=TextEditingController();
+  Future<void> saveProject() async {
+    try {
+      await ProjectStore.save(projectName.text,{
+        'items':items.map((x)=>{'category':x.category,'description':x.description,'kind':x.kind.name,'frequency':x.frequency.name,'quantity':x.quantity,'unitPrice':x.unitPrice}).toList(),
+        'discount':discountRate.text,'growth':growthRate.text,'costGrowth':costGrowthRate.text,'years':years.text,'recovery':recovery.text,
+      });
+      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تم حفظ المشروع','Project saved'))));
+    }catch(e){if(mounted)setState(()=>error=t('تعذر حفظ المشروع؛ تحقق من الاسم','Unable to save project; check name'));}
+  }
+  Future<void> openProject() async {
+    try {
+      final names=await ProjectStore.names();
+      if(!mounted)return;
+      final name=await showDialog<String>(context:context,builder:(ctx)=>SimpleDialog(title:Text(t('فتح مشروع محفوظ (استبدال البيانات الحالية)','Open saved project (replace current data)')),children:[
+        for(final n in names)SimpleDialogOption(onPressed:()=>Navigator.pop(ctx,n),child:Text(n)),
+        SimpleDialogOption(onPressed:()=>Navigator.pop(ctx),child:Text(t('إلغاء','Cancel'))),
+      ]));
+      if(name==null||!mounted)return;
+      final data=await ProjectStore.load(name);
+      if(data==null||!mounted)return;
+      final restored=(data['items'] as List).map((x)=>FeasibilityItem(category:x['category'] as String,description:x['description'] as String,kind:FeasibilityKind.values.byName(x['kind'] as String),frequency:FeasibilityFrequency.values.byName(x['frequency'] as String),quantity:(x['quantity'] as num).toDouble(),unitPrice:(x['unitPrice'] as num).toDouble())).toList();
+      setState((){items..clear()..addAll(restored);reset();projectName.text=name;discountRate.text=data['discount'] as String;growthRate.text=data['growth'] as String;costGrowthRate.text=data['costGrowth'] as String;years.text=data['years'] as String;recovery.text=data['recovery'] as String;showProjection=false;});
+    }catch(e){if(mounted)setState(()=>error=t('تعذر فتح المشروع','Unable to open project'));}
+  }
   @override Widget build(BuildContext context){
     final revenue=FeasibilityModel.annualRevenue(items),costs=FeasibilityModel.annualOperatingCosts(items),initial=FeasibilityModel.initialOutlay(items),surplus=FeasibilityModel.operatingSurplus(items);
     final payback=FeasibilityModel.simplePayback(items);
@@ -85,6 +111,11 @@ class _FeasibilityState extends State<FeasibilityScreen>{
       const SizedBox(height:8),
       Text(t('أضف أي تصنيف وبند إيراد أو مصروف أو استثمار. هذا تقدير تشغيلي أولي، وليس دراسة جدوى نهائية.','Add custom revenue, expense or investment categories. This is an initial operating estimate, not a complete feasibility study.')),
       const SizedBox(height:12),
+      TextField(controller:projectName,decoration:InputDecoration(labelText:t('اسم المشروع','Project name'))),
+      Wrap(spacing:8,children:[
+        OutlinedButton(onPressed:saveProject,child:Text(t('حفظ أو تحديث المشروع بالاسم','Save or update project by name'))),
+        OutlinedButton(onPressed:openProject,child:Text(t('فتح مشروع','Open project'))),
+      ]),
       TextField(controller:category,decoration:InputDecoration(labelText:t('اسم التصنيف المخصص','Custom category'),border:const OutlineInputBorder())),
       const SizedBox(height:8),
       TextField(controller:description,decoration:InputDecoration(labelText:t('وصف البند','Line item description'),border:const OutlineInputBorder())),
