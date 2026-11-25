@@ -19,9 +19,10 @@ void main() {
 
   testWidgets('depreciation calculator returns the correct amount', (tester) async {
     await tester.pumpWidget(const AccountingBag());
-    await tester.enterText(find.byType(TextField).at(0), '10000');
-    await tester.enterText(find.byType(TextField).at(1), '1000');
-    await tester.enterText(find.byType(TextField).at(2), '3');
+    final fields=find.descendant(of:find.byType(CalculatorScreen),matching:find.byType(TextField));
+    await tester.enterText(fields.at(0), '10000');
+    await tester.enterText(fields.at(1), '1000');
+    await tester.enterText(fields.at(2), '3');
     await tester.ensureVisible(find.text('احسب'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('احسب'));
