@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'package:flutter/material.dart';
 import 'accounting_metrics.dart';
 
@@ -28,7 +29,7 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
       final values=<int,double>{};
       for(var i=0;i<source.length;i++){
         final raw=source[i].text.trim().replaceAll(',','');
-        final number=double.tryParse(raw);
+        final number=parseAccountingNumber(raw);
         if(raw.isNotEmpty && number!=null && number.isFinite)values[i]=number;
       }
       // Accounting equation: assets = liabilities + equity.
@@ -43,7 +44,7 @@ class _ComprehensiveRatiosState extends State<ComprehensiveRatiosScreen> {
     }
     void autoFill(List<TextEditingController> source){
       double? read(int i){
-        final x=double.tryParse(source[i].text.trim().replaceAll(',',''));
+        final x=parseAccountingNumber(source[i].text.trim());
         return x!=null && x.isFinite?x:null;
       }
       final assets=read(5),liabilities=read(4),equity=read(6);
