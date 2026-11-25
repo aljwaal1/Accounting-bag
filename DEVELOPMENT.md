@@ -14,3 +14,12 @@ Batch 2:
 - da26a39: integrate eleventh section, retain existing ten sections and settings.
 - Added six numerical regression tests in test/professional_tools_test.dart.
 - IFRS 18 model is illustrative for non-financial entities without discontinued operations, not full compliance. Remaining: full statements, journal review, SQLite, structured export, release preparation and device testing. CI pending for batch 2.
+
+Batch 2 verified: runs 66–69 successful; stable run 69 (45579577230).
+Batch 3:
+- ddc8d3c: sqflite dependency and version 0.2.0+2.
+- ee31836: SQLite named project store.
+- 9b08ef6: feasibility project save/open, including forecast assumptions; same name updates existing project.
+- 4e2f2ae: CI release AAB artifact, no publication or production signing.
+- 0bd35de: privacy draft, requires manifest and Data Safety review.
+Pending: CI verification, SQLite integration/device tests, history migration, structured exports, full IFRS journal audit, additional statements, icon and production signing.
