@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'number_input.dart';
+import 'project_store.dart';
+import 'dart:convert';
 
 /// Simplified management tools, not a complete IFRS financial statement.
 class ProfessionalMath {
@@ -25,6 +27,29 @@ class _ProfessionalToolsState extends State<ProfessionalTools>{
   final fields=List.generate(6,(_)=>TextEditingController());
   String t(String ar,String en)=>widget.en?en:ar;
   @override void dispose(){for(final c in fields){c.dispose();}super.dispose();}
+  Future<void> showHistory() async {
+    try {
+      final rows=await ProjectStore.history();
+      if(!mounted)return;
+      await showDialog<void>(context:context,builder:(dialogContext)=>AlertDialog(
+        title:Text(t('سجل الحسابات','Calculation history')),
+        content:SizedBox(width:400,height:360,child:rows.isEmpty?Text(t('لا توجد حسابات محفوظة','No saved calculations')):ListView.builder(itemCount:rows.length,itemBuilder:(context,i){
+          final row=rows[i];
+          final data=jsonDecode(row['payload'] as String) as Map;
+          return ListTile(title:Text(row['tool'] as String),subtitle:Text((data['results'] as List).join('\n')),trailing:IconButton(tooltip:t('حذف','Delete'),icon:const Icon(Icons.delete_outline),onPressed:() async {
+            try {
+              await ProjectStore.deleteCalculation(row['id'] as int);
+              if(dialogContext.mounted)Navigator.of(dialogContext).pop();
+            }catch(_){
+              if(mounted)ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content:Text(t('تعذر الحذف','Delete failed'))));
+            }
+          }));
+        })),
+        actions:[TextButton(onPressed:()=>Navigator.of(dialogContext).pop(),child:Text(t('إغلاق','Close')))]));
+    }catch(_){
+      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر قراءة السجل','Could not read history'))));
+    }
+  }
   @override Widget build(BuildContext context){
     final names=[t('قائمة الدخل IFRS 18','IFRS 18 income'),t('المركز المالي','Financial position'),t('نقطة التعادل','Break-even'),t('انخفاض المخزون IAS 2','IAS 2 inventory'),t('ضريبة شاملة','Inclusive VAT'),t('تكلفة رأس المال WACC','WACC'),t('التدفقات النقدية IAS 7','IAS 7 cash flows'),t('هامش المساهمة','Contribution margin')];
     final labels=[
@@ -64,6 +89,17 @@ class _ProfessionalToolsState extends State<ProfessionalTools>{
       if(mode==6)Text(t('تسوية مبسطة للنقد والنقد المعادل وفق IAS 7، وليست قائمة تدفقات كاملة. أدخل صافي التدفقات بإشاراتها بعد تصنيفها.','Simplified IAS 7 cash and cash equivalents reconciliation, not a complete statement. Enter signed net flows after classification.')),
       if(mode==3)Text(t('تخفيض المخزون لا يتجاوز تكلفته؛ افحص أي التزام إضافي بصورة منفصلة.','Write-down capped at inventory cost; assess additional obligations separately.')),
       for(var i=0;i<labels.length;i++)Padding(padding:const EdgeInsets.symmetric(vertical:5),child:TextField(controller:fields[i],keyboardType:TextInputType.numberWithOptions(decimal:true,signed:signed.contains(i)),decoration:InputDecoration(labelText:labels[i]),onChanged:(_)=>setState((){}))),
+      Wrap(spacing:8,children:[
+        OutlinedButton.icon(onPressed:showHistory,icon:const Icon(Icons.history),label:Text(t('السجل','History'))),
+        FilledButton.icon(onPressed:!valid||results.isEmpty?null:() async {
+          try {
+            await ProjectStore.saveCalculation(names[mode],{'mode':mode,'inputs':Map.fromIterables(labels,values),'results':results});
+            if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تم الحفظ','Saved'))));
+          }catch(_){
+            if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('تعذر الحفظ','Save failed'))));
+          }
+        },icon:const Icon(Icons.save),label:Text(t('حفظ الحساب','Save calculation')))
+      ]),
       Card(child:Padding(padding:const EdgeInsets.all(16),child:Text(results.isEmpty?t('أدخل قيمًا صحيحة','Enter valid values'):results.join('\n'),style:const TextStyle(fontSize:16)))),
     ]);
   }
