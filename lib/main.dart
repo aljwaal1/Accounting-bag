@@ -210,7 +210,10 @@ class NotesScreen extends StatelessWidget{
  ['تحصيل دين من عميل','Collect receivable','النقدية','Cash','الذمم المدينة','Accounts receivable','لا ينشأ إيراد جديد من التحصيل','Collection does not create new revenue'],
  ['دفع إيجار الفترة','Pay current rent','مصروف الإيجار','Rent expense','النقدية','Cash','مثال لإيجار معفى من إثبات أصل حق الاستخدام والتزام الإيجار وفق IFRS 16، عند اختيار الإعفاء المناسب','Example of rent eligible for an elected IFRS 16 recognition exemption'],
  ['شراء معدات بالآجل','Equipment on account','المعدات','Equipment','الذمم الدائنة','Accounts payable','إثبات أصل والتزام','Record an asset and liability'],
- ['إثبات الرواتب المستحقة','Accrue salaries','مصروف الرواتب','Salaries expense','رواتب مستحقة الدفع','Salaries payable','رواتب الفترة غير المدفوعة','Unpaid salaries for the period']
+ ['إثبات الرواتب المستحقة','Accrue salaries','مصروف الرواتب','Salaries expense','رواتب مستحقة الدفع','Salaries payable','رواتب الفترة غير المدفوعة','Unpaid salaries for the period'],
+ ['إهلاك أصل مستخدم','Depreciate asset in use','مصروف الإهلاك','Depreciation expense','مجمع الإهلاك','Accumulated depreciation','IAS 16: مثال لأصل يستخدم في الإدارة؛ قد يدخل الإهلاك في تكلفة أصل آخر عند الاقتضاء','IAS 16: administrative asset example; depreciation may form part of another asset cost'],
+ ['دفعة مقدمة من عميل','Customer advance','النقدية','Cash','التزام عقد','Contract liability','IFRS 15: قبل الوفاء بالتزام الأداء في عقد مستوف للشروط','IFRS 15: before satisfying a performance obligation in a qualifying contract'],
+ ['انخفاض قيمة المخزون','Inventory write-down','خسارة انخفاض المخزون','Inventory write-down expense','المخزون','Inventory','IAS 2: عندما تقل صافي القيمة القابلة للتحقق عن التكلفة','IAS 2: when net realizable value falls below cost']
  ];
  return ListView(children: [
  if(!entries)for(final n in notes)card(en?n[1]:n[0],Text(en?n[3]:n[2])),
