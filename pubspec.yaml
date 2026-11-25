@@ -19,6 +19,7 @@ flutter:
     - assets/fonts/
 
 dev_dependencies:
+  sqflite_common_ffi: ^2.3.6
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
