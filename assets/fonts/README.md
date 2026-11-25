@@ -1,0 +1,1 @@
+Noto Naskh Arabic (SIL Open Font License) is copied from the Ubuntu fonts-noto-core package by CI before Flutter builds. For local builds, copy NotoNaskhArabic-Regular.ttf and its license into this directory.
