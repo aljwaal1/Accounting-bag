@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -88,12 +89,7 @@ class _SmartToolsState extends State<SmartTools>{
   String t(String ar,String en)=>widget.en?en:ar;
   @override void dispose(){amount.dispose();rate.dispose();other.dispose();fourth.dispose();fifth.dispose();lots.dispose();super.dispose();}
   double? read(TextEditingController c,{bool signed=false}){
-    final raw=c.text.trim().replaceAll('٬','').replaceAll('٫','.').replaceAll(',','');
-    final normalized=raw.split('').map((ch){
-      final ar='٠١٢٣٤٥٦٧٨٩'.indexOf(ch),fa='۰۱۲۳۴۵۶۷۸۹'.indexOf(ch);
-      return ar>=0?ar.toString():fa>=0?fa.toString():ch;
-    }).join();
-    final v=double.tryParse(normalized);
+    final v=parseAccountingNumber(c.text);
     return v!=null&&v.isFinite&&(signed||v>=0)?v:null;
   }
   @override Widget build(BuildContext context){
@@ -255,7 +251,7 @@ class _SmartToolsState extends State<SmartTools>{
       for(final row in rows){
         final parts=row.trim().split(';');
         if(parts.length!=2){valid=false;break;}
-        final q=double.tryParse(parts[0].trim()),p=double.tryParse(parts[1].trim());
+        final q=parseAccountingNumber(parts[0]),p=parseAccountingNumber(parts[1]);
         if(q==null||p==null||!q.isFinite||!p.isFinite||q<=0||p<0){valid=false;break;}
         quantity+=q;total+=q*p;
         final used=remaining<q?remaining:q;
