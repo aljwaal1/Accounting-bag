@@ -7,3 +7,10 @@ Batch 1:
 - 387ccde: settings restoration test and mock preferences.
 CI for this batch must be verified before declaring stable.
 Remaining: financial statements including IFRS 18 presentation, costs, finance and tax tools; review recognition assumptions and monetary rounding; SQLite project/history persistence; structured reports PDF/XLSX/CSV; small-screen and export tests; release version, icon, privacy and AAB. No Play publication authorized.
+
+Batch 1 verified: runs 61–65 completed successfully; stable run 65 (45571486234).
+Batch 2:
+- dad6fe1: professional tools: simplified IFRS 18 subtotals, accounting equation, break-even, IAS 2 NRV, inclusive VAT, WACC.
+- da26a39: integrate eleventh section, retain existing ten sections and settings.
+- Added six numerical regression tests in test/professional_tools_test.dart.
+- IFRS 18 model is illustrative for non-financial entities without discontinued operations, not full compliance. Remaining: full statements, journal review, SQLite, structured export, release preparation and device testing. CI pending for batch 2.
