@@ -1,3 +1,4 @@
+import 'number_input.dart';
 import 'package:flutter/material.dart';
 
 class AccountingMetrics {
@@ -55,7 +56,7 @@ class _AccountingMetricsState extends State<AccountingMetricsScreen>{
     void compute(){
       final values=<double>[];
       for(var i=1;i<options[mode].length;i++){
-        final v=double.tryParse(ctrls[i-1].text.trim().replaceAll(',',''));
+        final v=parseAccountingNumber(ctrls[i-1].text.trim());
         if(v==null || !v.isFinite){setState(()=>result=t('أدخل أرقامًا صحيحة','Enter valid numbers'));return;}
         values.add(v);
       }
