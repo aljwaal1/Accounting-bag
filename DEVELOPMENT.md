@@ -23,3 +23,6 @@ Batch 3:
 - 4e2f2ae: CI release AAB artifact, no publication or production signing.
 - 0bd35de: privacy draft, requires manifest and Data Safety review.
 Pending: CI verification, SQLite integration/device tests, history migration, structured exports, full IFRS journal audit, additional statements, icon and production signing.
+
+Batch 3 verified: run 74 (45588829558) analyze, tests, release APK and AAB build/upload succeeded. Device SQLite behavior not verified.
+Batch 4: 98474bc clarifies IFRS 15 performance obligations and IFRS 16 elected rent recognition exemptions in bilingual notes and journal examples. CI pending for this change. Remaining: full journal audit, history, exports, additional statements, device tests, icon and production signing.
