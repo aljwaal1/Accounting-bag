@@ -16,6 +16,9 @@ void main(){
   });
   test('Excel numeric cells survive encoding',(){
     final book=xl.Excel.decodeBytes(HistoryExport.excel([['VAT','date','Result','Tax','20.00']]));
-    expect(book['Sheet1'].rows.first[4]?.value,xl.DoubleCellValue(20));
+    final value=book['Sheet1'].rows.first[4]?.value;
+    expect(value,anyOf(xl.IntCellValue(20),xl.DoubleCellValue(20)));
+    final fractional=xl.Excel.decodeBytes(HistoryExport.excel([['VAT','date','Result','Tax','20.25']]));
+    expect(fractional['Sheet1'].rows.first[4]?.value,xl.DoubleCellValue(20.25));
   });
 }
